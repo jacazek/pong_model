@@ -25,10 +25,10 @@ Run the main script with desired generator
 `python main.py`
 
 ## Todo
--[ ] Capture metrics for model performance during training
--[ ] Include bounding box collisions in the input data
--[ ] separate paddle control and scoring from ball engine
--[ ] introduce variability in generator to paddle movements
--[ ] limit ball vector to certain degrees
--[ ] provide extreme negative feedback the further ball goes out of bounds during training
--[ ] try out a couple different model architectures to see which might start to provide usable results
+-[ ] Capture metrics for model performance during training  
+-[ ] Include bounding box collisions in the input data  
+-[ ] separate paddle control and scoring from ball engine  
+-[ ] introduce variability in generator to paddle movements  
+-[ ] limit ball vector to certain degrees  
+-[ ] provide extreme negative feedback the further ball goes out of bounds during training   
+-[ ] try out a couple different model architectures to see which might start to provide usable results  
