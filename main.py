@@ -68,7 +68,7 @@ pygame.display.set_caption("Pong State Renderer")
 
 # Main loop to render the state
 running = True
-# states = generate_pong_states(2000)
+
 for state in generate_fuzzy_states(engine_config):
 # for state in generate_pong_states(engine_config):
     if not running:

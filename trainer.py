@@ -7,8 +7,8 @@ from engine import finite_pong_state
 
 from fuzzy_engine import PongDataset, RNNModel
 
-train_dataset = PongDataset(finite_pong_state, 10000)
-train_dataloader = DataLoader(train_dataset, batch_size=40, shuffle=False)
+train_dataset = PongDataset(finite_pong_state, 100000)
+train_dataloader = DataLoader(train_dataset, batch_size=100, shuffle=False)
 
 validate_dataset = PongDataset(finite_pong_state, 500)
 validate_dataloader = DataLoader(validate_dataset, batch_size=10, shuffle=False)
@@ -23,7 +23,7 @@ for epoch in range(epochs):
 
     total_loss = 0
     count = 1
-    with tqdm(train_dataloader, unit=" batch", desc="Training...") as loader:
+    with tqdm(train_dataloader, unit=" batch", desc=f"Training (epoch {epoch + 1} of {epochs})") as loader:
         model.train()
         for idx, batch in enumerate(loader):
             batch_states, batch_next_states = batch
@@ -43,7 +43,7 @@ for epoch in range(epochs):
             avg_loss = total_loss / (idx+1)
             loader.set_postfix({"loss": avg_loss})
 
-    with tqdm(validate_dataloader, unit=" batch", desc="Validation...") as loader:
+    with tqdm(validate_dataloader, unit=" batch", desc=f"Validation (epoch {epoch + 1} of {epochs})") as loader:
         model.eval()
         for idx, batch in enumerate(loader):
             batch_states, batch_next_states = batch
