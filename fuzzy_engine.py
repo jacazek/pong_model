@@ -16,9 +16,9 @@ class PongDataset(IterableDataset):
     def generate(self):
         window_size = 6
         window = deque(maxlen=6)
-        for i in range(window_size):
-            window.append([.5, .5] + [0.0 for i in range(6)])
-        for item in self.generator(self.count):
+        # for i in range(window_size):
+        #     window.append([.5, .5] + [0.0 for i in range(6)])
+        for item in list(self.generator(self.count)):
             window.append(item[:4] + item[-4:])
             if len(window) == window_size:
                 states = np.array(window)
@@ -33,9 +33,9 @@ class PongDataset(IterableDataset):
 class RNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers=2):
         super(RNNModel, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size * 2, num_layers, batch_first=True, dropout=0.4)
+        self.lstm = nn.LSTM(input_size, hidden_size * 4, num_layers, batch_first=True, dropout=0.4)
         self.relu = nn.ReLU()
-        self.middle_fc = nn.Linear(hidden_size * 2, hidden_size)
+        self.middle_fc = nn.Linear(hidden_size * 4, hidden_size)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):

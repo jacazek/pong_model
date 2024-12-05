@@ -8,13 +8,15 @@ from engine import finite_pong_state
 
 from fuzzy_engine import PongDataset, RNNModel
 
-train_dataset = PongDataset(finite_pong_state, 20000)
-train_dataloader = DataLoader(train_dataset, batch_size=100, shuffle=False)
+train_dataset = PongDataset(finite_pong_state, 100000)
+train_dataloader = DataLoader(train_dataset, batch_size=10000, shuffle=False, num_workers=40, pin_memory=True)
 
 validate_dataset = PongDataset(finite_pong_state, 500)
 validate_dataloader = DataLoader(validate_dataset, batch_size=10, shuffle=False)
 
-model = RNNModel(8, 8, 4, 1)
+device="cuda"
+
+model = RNNModel(8, 8, 4, 2).to(device=device)
 criterion = nn.MSELoss()
 learning_rate = 0.001
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -29,8 +31,8 @@ for epoch in range(epochs):
         model.train()
         for idx, batch in enumerate(loader):
             batch_states, batch_next_states = batch
-            batch_states = torch.tensor(batch_states).float()
-            batch_next_states = torch.tensor(batch_next_states).float()
+            batch_states = torch.tensor(batch_states).float().to(device=device)
+            batch_next_states = torch.tensor(batch_next_states).float().to(device=device)
             # Forward pass
             predictions = model(batch_states)
             loss = criterion(predictions, batch_next_states)
@@ -49,8 +51,8 @@ for epoch in range(epochs):
         model.eval()
         for idx, batch in enumerate(loader):
             batch_states, batch_next_states = batch
-            batch_states = torch.tensor(batch_states).float()
-            batch_next_states = torch.tensor(batch_next_states).float()
+            batch_states = torch.tensor(batch_states).float().to(device=device)
+            batch_next_states = torch.tensor(batch_next_states).float().to(device=device)
             # Forward pass
             predictions = model(batch_states)
             loss = criterion(predictions, batch_next_states)
