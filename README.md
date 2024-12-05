@@ -22,6 +22,10 @@ Run the main script with desired generator
 1. engine - generates states computed mathematically
 2. fuzzy_engine - generates states using model trained on states generated from engine
 
+Update main.py to use the desired generator  
+![alt text](docs/image.png "Image")  
+
+then run the main script  
 `python main.py`
 
 ## Todo
