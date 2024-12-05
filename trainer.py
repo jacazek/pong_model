@@ -18,9 +18,6 @@ criterion = nn.MSELoss()
 learning_rate = 0.001
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-# for data, labels in data_loader:
-#     print(data.shape)
-#     print(labels.shape)
 epochs = 100
 for epoch in range(epochs):
 

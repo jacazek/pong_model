@@ -1,6 +1,7 @@
 from collections import deque
 
 import numpy as np
+import torch
 from torch import nn as nn
 from torch.utils.data import IterableDataset
 from engine import EngineConfig, finite_pong_state
@@ -16,7 +17,7 @@ class PongDataset(IterableDataset):
         window_size = 6
         window = deque(maxlen=6)
         for i in range(window_size):
-            window.append([0.0 for i in range(8)])
+            window.append([.5, .5] + [0.0 for i in range(6)])
         for item in self.generator(self.count):
             window.append(item[:4] + item[-4:])
             if len(window) == window_size:
@@ -32,7 +33,9 @@ class PongDataset(IterableDataset):
 class RNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers=2):
         super(RNNModel, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=0.2)
+        self.lstm = nn.LSTM(input_size, hidden_size * 2, num_layers, batch_first=True, dropout=0.4)
+        self.relu = nn.ReLU()
+        self.middle_fc = nn.Linear(hidden_size * 2, hidden_size)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
@@ -40,12 +43,7 @@ class RNNModel(nn.Module):
         out, _ = self.lstm(x)
         # Use the last output of the sequence for prediction
         last_out = out[:, -1, :]
-        return self.fc(last_out)
-
-
-from engine import finite_pong_state, EngineConfig
-from fuzzy_engine import PongDataset, RNNModel
-import torch
+        return self.fc(self.middle_fc(self.relu(last_out)))
 
 
 
