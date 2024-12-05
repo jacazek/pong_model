@@ -18,7 +18,7 @@ class PongDataset(IterableDataset):
         window = deque(maxlen=6)
         # for i in range(window_size):
         #     window.append([.5, .5] + [0.0 for i in range(6)])
-        for item in list(self.generator(self.count)):
+        for item in self.generator(self.count):
             window.append(item[:4] + item[-4:])
             if len(window) == window_size:
                 states = np.array(window)
@@ -50,7 +50,7 @@ class RNNModel(nn.Module):
 
 def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
     states = finite_pong_state(num_steps=num_steps, engine_config=engine_config)
-    model = RNNModel(8, 8, 4, 1)
+    model = RNNModel(8, 8, 4, 2)
     model.load_state_dict(torch.load("pong_rnn_model.pth", weights_only=True))
     model.eval()
     window_size = 5
