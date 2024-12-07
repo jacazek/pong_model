@@ -87,7 +87,7 @@ for state in generate_fuzzy_states(engine_config):
     render_state(state)
 
     # Add a delay to control the frame rate
-    pygame.time.delay(30)
+    pygame.time.delay(60)
 
 # Quit Pygame
 pygame.quit()

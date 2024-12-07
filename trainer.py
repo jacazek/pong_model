@@ -5,6 +5,7 @@ from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from engine import finite_pong_state
+import numpy as np
 
 from fuzzy_engine import PongDataset, RNNModel
 
@@ -22,7 +23,7 @@ learning_rate = 0.001
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
-epochs = 100
+epochs = 20
 for epoch in range(epochs):
 
     total_loss = 0
@@ -45,7 +46,8 @@ for epoch in range(epochs):
             total_loss += loss.item()
 
             avg_loss = total_loss / (idx+1)
-            loader.set_postfix({"loss": avg_loss})
+            mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
+            loader.set_postfix({"loss": avg_loss, "mse": mse})
 
     with tqdm(validate_dataloader, unit=" batch", desc=f"Validation (epoch {epoch + 1} of {epochs})") as loader:
         model.eval()
@@ -60,7 +62,8 @@ for epoch in range(epochs):
             total_loss += loss.item()
 
             avg_loss = total_loss / (idx + 1)
-            loader.set_postfix({"loss": avg_loss})
+            mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
+            loader.set_postfix({"loss": avg_loss, "mse": mse})
 
     scheduler.step()
 

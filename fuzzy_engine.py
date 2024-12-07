@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn as nn
 from torch.utils.data import IterableDataset
-from engine import EngineConfig, finite_pong_state
+from engine import EngineConfig, finite_pong_state, Ball
 
 
 class PongDataset(IterableDataset):
@@ -49,20 +49,30 @@ class RNNModel(nn.Module):
 
 
 def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
+    ball = Ball()
+    engine_config.ball = ball
     states = finite_pong_state(num_steps=num_steps, engine_config=engine_config)
     model = RNNModel(8, 8, 4, 2)
     model.load_state_dict(torch.load("pong_rnn_model.pth", weights_only=True))
     model.eval()
     window_size = 5
     window = deque(maxlen=5)
+    counter = 0
     for i in range(window_size):
         window.append([0.0 for i in range(8)])
     for state in states:
+        counter += 1
         # print(window[-1])
         fuzzy_state = model(torch.tensor([window]).float()).tolist()[0]
         window.append(fuzzy_state + state[6:])
-
-        yield fuzzy_state + state[4:]
+        options = [state, fuzzy_state + state[4:]]
+        index = np.random.choice([0,1]) if counter % 100 == 0 else 0
+        if (index == 1):
+            ball.x = fuzzy_state[0]
+            ball.y = fuzzy_state[1]
+            ball.xv = fuzzy_state[2]
+            ball.yv = fuzzy_state[3]
+        yield options[index]
 
 
 if __name__ == "__main__":
