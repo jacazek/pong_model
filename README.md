@@ -42,4 +42,5 @@ then run the main script
 - [ ] limit ball vector to certain degrees  
 - [ ] provide extreme negative feedback the further ball goes out of bounds during training  
 - [ ] provide extreme negative feedback for ball moving slowly or not at all  
-- [ ] try out a couple different model architectures to see which might start to provide usable results  
+- [ ] try out a couple different model architectures to see which might start to provide usable results
+- [ ] predict score (continous integer mse) and hits as well (binary state cross-entropy)

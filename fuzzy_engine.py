@@ -4,26 +4,29 @@ import numpy as np
 import torch
 from torch import nn as nn
 from torch.utils.data import IterableDataset
-from engine import EngineConfig, finite_pong_state, Ball
-from model_configuration import device, input_size, hidden_size, output_size, num_layers, model_path
+from engine import EngineConfig, generate_pong_states, Ball, RandomPaddle
+from model_configuration import device, input_size, hidden_size, output_size, num_layers, model_path, input_sequence_length
 
 
 class PongDataset(IterableDataset):
-    def __init__(self, state_generator, count):
+    def __init__(self, state_generator, count, input_sequence_length = 5):
 
+        self.engine_config = EngineConfig()
+        self.engine_config.paddle_class = RandomPaddle
         self.generator = state_generator
         self.count = count
+        self.input_sequence_length = input_sequence_length
 
     def generate(self):
-        window_size = 6
-        window = deque(maxlen=6)
+        window_size = self.input_sequence_length + 1
+        window = deque(maxlen=window_size)
         # for i in range(window_size):
         #     window.append([.5, .5] + [0.0 for i in range(6)])
-        for item in self.generator(self.count):
+        for item in self.generator(self.count, engine_config=self.engine_config):
             window.append(item[:4] + item[-6:])
             if len(window) == window_size:
                 states = np.array(window)
-                yield states[:5], states[-1][:4]
+                yield states[:self.input_sequence_length], states[-1][:4]
 
 
 
@@ -67,15 +70,15 @@ class RNNModel(nn.Module):
 def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
     ball = Ball()
     engine_config.ball = ball
-    states = finite_pong_state(num_steps=num_steps, engine_config=engine_config)
+    states = generate_pong_states(num_steps=num_steps, engine_config=engine_config)
     model = RNNModel(input_size, hidden_size, output_size, num_layers)
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
-    window_size = 5
-    window = deque(maxlen=5)
+    window_size = input_sequence_length
+    window = deque(maxlen=window_size)
     counter = 0
-    for i in range(window_size):
-        window.append([0.0 for i in range(10)])
+    state = next(states)
+    window.append(state[:4] + state[6:])
     for state in states:
         counter += 1
         # print(window[-1])
@@ -90,15 +93,17 @@ def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
             ball.yv = fuzzy_state[3]
         yield options[index]
 
-def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=10000):
-    states = finite_pong_state(num_steps=num_steps, engine_config=engine_config)
+def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
+    states = generate_pong_states(num_steps=num_steps, engine_config=engine_config)
     model = RNNModel(input_size, hidden_size, output_size, num_layers)
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
-    window_size = 5
-    window = deque(maxlen=5)
+    window_size = input_sequence_length
+    window = deque(maxlen=window_size)
+    counter = 0
     for i in range(window_size):
-        window.append([0.0 for i in range(10)])
+        state = next(states)
+        window.append(state[:4] + state[6:])
     for state in states:
         # print(window[-1])
         fuzzy_state = model(torch.tensor([window]).float()).tolist()[0]

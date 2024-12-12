@@ -1,7 +1,7 @@
 """
 Given a balls initial position, direction and
 """
-from engine import generate_pong_states, EngineConfig, finite_pong_state
+from engine import generate_pong_states, EngineConfig, RandomPaddle
 from fuzzy_engine import generate_fuzzy_states
 
 print("Hello world!")
@@ -29,6 +29,8 @@ def scale_to_screen(x, y):
 # state = [400, 200, 5, -5, 170, 230]  # [ball_x, ball_y, ball_vx, ball_vy, paddle1_y, paddle2_y]
 
 engine_config = EngineConfig()
+engine_config.set_paddle_class(RandomPaddle)
+
 
 # Function to render the state
 def render_state(state):
@@ -74,7 +76,7 @@ pygame.display.set_caption("Pong State Renderer")
 running = True
 
 for state in generate_fuzzy_states(engine_config):
-# for state in finite_pong_state(num_steps=50000, engine_config=engine_config):
+# for state in generate_pong_states(num_steps=50000, engine_config=engine_config):
     if not running:
         break
     for event in pygame.event.get():
@@ -91,7 +93,7 @@ for state in generate_fuzzy_states(engine_config):
     render_state(state)
 
     # Add a delay to control the frame rate
-    pygame.time.delay(60)
+    # pygame.time.delay(60)
 
 # Quit Pygame
 pygame.quit()

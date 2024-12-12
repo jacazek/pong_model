@@ -4,23 +4,23 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from engine import finite_pong_state
+from engine import generate_pong_states
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
 
 from fuzzy_engine import PongDataset, RNNModel
-from model_configuration import device, input_size, hidden_size, output_size, num_layers, model_path
+from model_configuration import device, input_size, hidden_size, output_size, num_layers, model_path, input_sequence_length
 
 batch_size = 1000
 
 train_data_set_steps = 100000
-train_dataset = PongDataset(finite_pong_state, train_data_set_steps)
+train_dataset = PongDataset(generate_pong_states, train_data_set_steps, input_sequence_length)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=int(os.cpu_count() / 4), pin_memory=True)
 
 validate_dataset_steps = 5000
-validate_dataset = PongDataset(finite_pong_state, validate_dataset_steps)
+validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps, input_sequence_length)
 validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
 model = RNNModel(input_size, hidden_size, output_size, num_layers).to(device=device)

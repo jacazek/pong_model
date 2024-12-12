@@ -14,6 +14,9 @@ class EngineConfig:
         self.field_width = field_width
         self.field_height = field_height
         self.ball = ball
+        self.paddle_class = Paddle
+    def set_paddle_class(self, PaddleClass):
+        self.paddle_class = PaddleClass
 
 
 class Field:
@@ -33,15 +36,29 @@ class Paddle:
         self.count = 0
 
     def update(self, dt):
+        # if assigned key is pressed, move paddle in indicated direction at configured velocity until collision with box
+        pass
+
+
+class RandomPaddle(Paddle):
+    def __init__(self, width, height, x, y, yv, field):
+        Paddle.__init__(self, width, height, x, y, yv, field)
+        self.yv = RandomPaddle.random_paddle_velocity()
+
+    @staticmethod
+    def random_paddle_velocity():
+        return random_velocity(min=.08, max=.1)
+
+    def update(self, dt):
         self.count += 1
         self.y += self.yv * dt
         if self.y <= 0 or self.y + self.height >= self.field.height:
             self.yv *= -1  # Reverse vertical velocity
         else:
-            self.yv = random_velocity() if self.count % 100 == 0 else self.yv
+            self.yv = RandomPaddle.random_paddle_velocity() if self.count % 100 == 0 else self.yv
 
 
-class Ball():
+class Ball:
     def __init__(self, initial_x=0, initial_y=0, initial_xv=0, initial_yv=0, radius=1, left_paddle: Paddle=None, right_paddle: Paddle=None,
                  field: Field=None):
         self.x = initial_x
@@ -88,13 +105,17 @@ class Ball():
         return [left_paddle_collision, right_paddle_collision, top_field_collision, bottom_field_collision]
 
 
-def finite_pong_state(num_steps=1000, engine_config=EngineConfig()):
-    state_generator = generate_pong_states(engine_config)
-    for step in range(num_steps):
-        yield next(state_generator)
+def generate_pong_states(num_steps=None, engine_config=EngineConfig()):
+    state_generator = _generate_pong_states(engine_config)
+    if num_steps is None:
+        for state in state_generator:
+            yield state
+    else:
+        for step in range(num_steps):
+            yield next(state_generator)
 
 
-def generate_pong_states(engine_config=EngineConfig()):
+def _generate_pong_states(engine_config=EngineConfig()):
     # states = []  # To store ball position, velocity, and paddle positions
 
     dt = 1  # Time step
@@ -108,10 +129,12 @@ def generate_pong_states(engine_config=EngineConfig()):
 
     # Initialize ball position and velocity
     field = Field(engine_config.field_width, engine_config.field_height)
-    left_paddle = Paddle(width=paddle_width, height=paddle_height, x=0, y=field.height / 2, yv=random_velocity(),
-                         field=field)
-    right_paddle = Paddle(width=paddle_width, height=paddle_height, x=field.width - paddle_width, y=field.height / 2,
-                          yv=random_velocity(), field=field)
+
+    # convert to using factory?
+    left_paddle = engine_config.paddle_class(paddle_width, paddle_height, 0, field.height / 2, random_velocity(),
+                         field)
+    right_paddle = engine_config.paddle_class(paddle_width, paddle_height, field.width - paddle_width, field.height / 2,
+                          random_velocity(), field)
     ball = engine_config.ball or Ball()
     ball.reset(0.5, 0.5, random_velocity(0.03), random_velocity(0.03))
     ball.left_paddle=left_paddle
