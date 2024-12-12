@@ -9,16 +9,15 @@ from model_configuration import device, input_size, hidden_size, output_size, nu
 
 
 class PongDataset(IterableDataset):
-    def __init__(self, state_generator, count, input_sequence_length = 5):
+    def __init__(self, state_generator, count):
 
         self.engine_config = EngineConfig()
         self.engine_config.paddle_class = RandomPaddle
         self.generator = state_generator
         self.count = count
-        self.input_sequence_length = input_sequence_length
 
     def generate(self):
-        window_size = self.input_sequence_length + 1
+        window_size = input_sequence_length + 1
         window = deque(maxlen=window_size)
         # for i in range(window_size):
         #     window.append([.5, .5] + [0.0 for i in range(6)])
@@ -26,7 +25,7 @@ class PongDataset(IterableDataset):
             window.append(item[:4] + item[-6:])
             if len(window) == window_size:
                 states = np.array(window)
-                yield states[:self.input_sequence_length], states[-1][:4]
+                yield states[:input_sequence_length], states[-1][:4]
 
 
 
@@ -35,19 +34,22 @@ class PongDataset(IterableDataset):
 
 
 class RNNModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=2):
+    def __init__(self):
         super(RNNModel, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=0.2)
+        self.fc_position = nn.Linear(hidden_size, 2)
+        self.fc_velocity = nn.Linear(hidden_size, 2)
         # self.relu = nn.ReLU()
         # self.middle_fc = nn.Linear(hidden_size, hidden_size)
-        self.fc = nn.Linear(hidden_size, output_size)
+        # self.fc = nn.Linear(hidden_size, output_size)
+
 
     def forward(self, x):
         # LSTM output
         out, _ = self.lstm(x)
         # Use the last output of the sequence for prediction
         last_out = out[:, -1, :]
-        return self.fc(last_out)
+        return torch.concat((self.fc_position(last_out), self.fc_velocity(last_out)), dim=1)
 
 # class FCModel(nn.Module):
 #     def __init__(self, input_size, hidden_size, output_size, num_layers=2):
@@ -71,7 +73,7 @@ def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
     ball = Ball()
     engine_config.ball = ball
     states = generate_pong_states(num_steps=num_steps, engine_config=engine_config)
-    model = RNNModel(input_size, hidden_size, output_size, num_layers)
+    model = RNNModel()
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
     window_size = input_sequence_length
@@ -95,7 +97,7 @@ def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
 
 def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
     states = generate_pong_states(num_steps=num_steps, engine_config=engine_config)
-    model = RNNModel(input_size, hidden_size, output_size, num_layers)
+    model = RNNModel()
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
     window_size = input_sequence_length

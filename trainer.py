@@ -11,23 +11,23 @@ import matplotlib.pyplot as plt
 
 
 from fuzzy_engine import PongDataset, RNNModel
-from model_configuration import device, input_size, hidden_size, output_size, num_layers, model_path, input_sequence_length
+from model_configuration import device, model_path
 
-batch_size = 1000
+batch_size = 100
 
 train_data_set_steps = 100000
-train_dataset = PongDataset(generate_pong_states, train_data_set_steps, input_sequence_length)
+train_dataset = PongDataset(generate_pong_states, train_data_set_steps)
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=int(os.cpu_count() / 4), pin_memory=True)
 
-validate_dataset_steps = 5000
-validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps, input_sequence_length)
+validate_dataset_steps = 10000
+validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps)
 validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
-model = RNNModel(input_size, hidden_size, output_size, num_layers).to(device=device)
+model = RNNModel().to(device=device)
 criterion = nn.MSELoss()
 
-learning_rate = 0.001
-gamma=0.9
+learning_rate = 0.01
+gamma=0.5
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
