@@ -34,10 +34,10 @@ class PongDataset(IterableDataset):
 class RNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers=2):
         super(RNNModel, self).__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size * 4, num_layers, batch_first=True, dropout=0.2)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=0.2)
         # self.relu = nn.ReLU()
-        # self.middle_fc = nn.Linear(hidden_size * 4, hidden_size)
-        self.fc = nn.Linear(hidden_size * 4, output_size)
+        # self.middle_fc = nn.Linear(hidden_size, hidden_size)
+        self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         # LSTM output
