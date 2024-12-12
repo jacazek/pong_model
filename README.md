@@ -13,6 +13,11 @@ If installing for AMD GPU training/inference
 Install dependencies  
 `pip install -r requirements.txt`
 
+## Model configuration
+To adjust model parmaters, update the model_configuration.py
+
+If no GPU, be sure to set `device` to `cpu`
+
 ## Training
 Run the training script to generate a model  
 `python trainer.py`
