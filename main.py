@@ -1,7 +1,7 @@
 """
 Given a balls initial position, direction and
 """
-from engine import generate_pong_states, EngineConfig
+from engine import generate_pong_states, EngineConfig, finite_pong_state
 from fuzzy_engine import generate_fuzzy_states
 
 print("Hello world!")
@@ -18,6 +18,7 @@ screen_height = 400
 background_color = (0, 0, 0)  # Black
 ball_color = (255, 255, 255)  # White
 paddle_color = (255, 255, 255)  # White
+paddle_color_collision = (255, 0, 0)  # White
 
 
 def scale_to_screen(x, y):
@@ -32,7 +33,7 @@ engine_config = EngineConfig()
 # Function to render the state
 def render_state(state):
 
-    ball_x, ball_y, _, _, paddle1_y, paddle2_y, score_1, score_2, _, _ = state
+    ball_x, ball_y, _, _, paddle1_y, paddle2_y, score_1, score_2, collision_1, collision_2, blocked_1, blocked_2 = state
 
     # Clear the screen
     screen.fill(background_color)
@@ -44,23 +45,26 @@ def render_state(state):
     paddle_width = engine_config.paddle_width_percent * screen_width
     paddle_height = engine_config.paddle_height_percent * screen_height
 
-    pygame.draw.rect(screen, paddle_color, (0, paddle1_y * screen_height, paddle_width, paddle_height))  # Left paddle
-    pygame.draw.rect(screen, paddle_color, (screen_width - paddle_width, paddle2_y *  screen_height, paddle_width, paddle_height))  # Right paddle
+    pygame.draw.rect(screen, paddle_color_collision if collision_1 else paddle_color, (0, paddle1_y * screen_height, paddle_width, paddle_height))  # Left paddle
+    pygame.draw.rect(screen, paddle_color_collision if collision_2 else paddle_color, (screen_width - paddle_width, paddle2_y *  screen_height, paddle_width, paddle_height))  # Right paddle
 
-    render_scores(score_1, score_2)
+    render_scores(score_1, score_2, blocked_1, blocked_2)
+    render_field()
 
     # Update the display
     pygame.display.flip()
 
-font_size = 36
+font_size = 24
 font = pygame.font.Font(None, font_size)  # None = default font
 text_color = (255, 255, 255)  # White
-def render_scores(score1, score2):
-    score1_surface = font.render(f"{score1} | {score2}", True, text_color)
+def render_scores(score1, score2, blocked1, blocked2):
+    score1_surface = font.render(f"{score1}/{blocked1} | {score2}/{blocked2}", True, text_color)
     # score2_surface = font.render(str(int(score2)), True, text_color)
     screen.blit(score1_surface, (screen_width/2 - score1_surface.get_width()/2, 10))
     # screen.blit(score2_surface, (screen_width - 60, 10))
 
+def render_field():
+    pygame.draw.line(screen, text_color, (screen_width/2, 0), (screen_width/2, screen_height), 1)
 
 # Initialize Pygame screen
 screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
@@ -70,7 +74,7 @@ pygame.display.set_caption("Pong State Renderer")
 running = True
 
 for state in generate_fuzzy_states(engine_config):
-# for state in generate_pong_states(engine_config):
+# for state in finite_pong_state(num_steps=50000, engine_config=engine_config):
     if not running:
         break
     for event in pygame.event.get():

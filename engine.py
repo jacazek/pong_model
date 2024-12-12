@@ -100,6 +100,8 @@ def generate_pong_states(engine_config=EngineConfig()):
     dt = 1  # Time step
     score_1 = 0
     score_2 = 0
+    blocked_1 = 0
+    blocked_2 = 0
 
     paddle_width = engine_config.paddle_width_percent * engine_config.field_width
     paddle_height = engine_config.paddle_height_percent * engine_config.field_height
@@ -120,7 +122,7 @@ def generate_pong_states(engine_config=EngineConfig()):
     # Initialize paddle positions
 
     # Save the current state
-    yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, 0, 0]
+    yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, 0, 0, blocked_1, blocked_2]
 
     while True:
         # Update ball position
@@ -136,10 +138,13 @@ def generate_pong_states(engine_config=EngineConfig()):
             score_1 += 1
             ball.reset(.5, .5, random_velocity(0.03), random_velocity(0.03))
 
+        blocked_1 += collisions[0]
+        blocked_2 += collisions[1]
+
         # Update paddle positions (static or random movement for simulation)
         # Here, paddles are static, but you can add logic for movement.
         # Update paddle position
 
         # Save the current state
         yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, collisions[0],
-               collisions[1]]
+               collisions[1], blocked_1, blocked_2]

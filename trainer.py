@@ -6,27 +6,43 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from engine import finite_pong_state
 import numpy as np
+import os
+import matplotlib.pyplot as plt
+
 
 from fuzzy_engine import PongDataset, RNNModel
+from model_configuration import device, input_size, hidden_size, output_size, num_layers, model_path
 
-train_dataset = PongDataset(finite_pong_state, 100000)
-train_dataloader = DataLoader(train_dataset, batch_size=10000, shuffle=False, num_workers=40, pin_memory=True)
+batch_size = 1000
 
-validate_dataset = PongDataset(finite_pong_state, 500)
-validate_dataloader = DataLoader(validate_dataset, batch_size=10, shuffle=False)
+train_data_set_steps = 100000
+train_dataset = PongDataset(finite_pong_state, train_data_set_steps)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=int(os.cpu_count() / 4), pin_memory=True)
 
-device="cuda"
+validate_dataset_steps = 5000
+validate_dataset = PongDataset(finite_pong_state, validate_dataset_steps)
+validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
-model = RNNModel(8, 8, 4, 2).to(device=device)
+model = RNNModel(input_size, hidden_size, output_size, num_layers).to(device=device)
 criterion = nn.MSELoss()
+
 learning_rate = 0.001
+gamma=0.9
+
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+train_loss = []
+train_mse = []
+validation_loss = []
+validation_mse = []
+
 
 epochs = 20
 for epoch in range(epochs):
-
     total_loss = 0
+    avg_loss = 0
+    total_mse = 0
+    avg_mse = 0
     count = 1
     with tqdm(train_dataloader, unit=" batch", desc=f"Training (epoch {epoch + 1} of {epochs})") as loader:
         model.train()
@@ -44,11 +60,19 @@ for epoch in range(epochs):
             optimizer.step()
 
             total_loss += loss.item()
-
             avg_loss = total_loss / (idx+1)
-            mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
-            loader.set_postfix({"loss": avg_loss, "mse": mse})
 
+            mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
+            total_mse += mse.item()
+            avg_mse += total_mse / (idx+1)
+            loader.set_postfix({"loss": avg_loss, "mse": mse})
+        train_loss.append(avg_loss)
+        train_mse.append(avg_mse)
+
+    total_loss = 0
+    avg_loss = 0
+    total_mse = 0
+    avg_mse = 0
     with tqdm(validate_dataloader, unit=" batch", desc=f"Validation (epoch {epoch + 1} of {epochs})") as loader:
         model.eval()
         for idx, batch in enumerate(loader):
@@ -58,19 +82,26 @@ for epoch in range(epochs):
             # Forward pass
             predictions = model(batch_states)
             loss = criterion(predictions, batch_next_states)
-
             total_loss += loss.item()
-
             avg_loss = total_loss / (idx + 1)
+
             mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
+            total_mse += mse.item()
+            avg_mse += total_mse / (idx + 1)
             loader.set_postfix({"loss": avg_loss, "mse": mse})
 
+        validation_loss.append(avg_loss)
+        validation_mse.append(avg_mse)
     scheduler.step()
 
-torch.save(model.state_dict(), "pong_rnn_model.pth")
+torch.save(model.state_dict(), model_path)
 
-
-
-
-
-        # print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
+x = np.arange(epochs) + 1
+fix, ((ax1, ax2)) = plt.subplots(1, 2)
+ax1.plot(x, train_loss, label="train loss")
+ax1.plot(x, validation_loss, label="validation loss")
+ax1.legend(loc="upper right")
+ax2.plot(x, train_mse, label="train mse")
+ax2.plot(x, validation_mse, label="validation mse")
+ax2.legend(loc="upper right")
+plt.show()
