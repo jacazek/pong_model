@@ -9,35 +9,44 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
+from model import PongDataset, TransformerModel, RNNModel
+from model_configuration import device, model_path, classification_threshold, discrete_output_size, output_size
 
-from fuzzy_engine import PongDataset, RNNModel
-from model_configuration import device, model_path
-
-batch_size = 100
+batch_size = 1000
 
 train_data_set_steps = 100000
 train_dataset = PongDataset(generate_pong_states, train_data_set_steps)
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=int(os.cpu_count() / 4), pin_memory=True)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=int(os.cpu_count() / 4),
+                              pin_memory=True)
 
 validate_dataset_steps = 10000
 validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps)
 validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
-model = RNNModel().to(device=device)
-criterion = nn.MSELoss()
+model = TransformerModel().to(device=device)
+# model = torch.compile(model)
+regression_loss_fn = nn.MSELoss()
+classification_loss_fn = nn.BCEWithLogitsLoss()
 
-learning_rate = 0.01
-gamma=0.5
+learning_rate = 0.001
+gamma = 0.9
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+# optimizer = optim.Adam([
+#     {'params': model.classification_head.parameters(), 'lr': .001},  # Classification head
+#     {'params': list(model.fc_feature_expansion.parameters()) + list(model.lstm.parameters()) + list(
+#         model.regression_head.parameters()), 'lr': learning_rate}
+#
+# ])
+
+scaler = torch.cuda.amp.GradScaler()
 scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
 train_loss = []
 train_mse = []
 validation_loss = []
 validation_mse = []
 
-
-epochs = 20
+epochs = 50
 for epoch in range(epochs):
     total_loss = 0
     avg_loss = 0
@@ -46,26 +55,38 @@ for epoch in range(epochs):
     count = 1
     with tqdm(train_dataloader, unit=" batch", desc=f"Training (epoch {epoch + 1} of {epochs})") as loader:
         model.train()
+
         for idx, batch in enumerate(loader):
             batch_states, batch_next_states = batch
+
             batch_states = torch.tensor(batch_states).float().to(device=device)
             batch_next_states = torch.tensor(batch_next_states).float().to(device=device)
+            target_continuous_states = batch_next_states[:, :output_size]
+            target_discrete_states = batch_next_states[:, output_size:]
             # Forward pass
-            predictions = model(batch_states)
-            loss = criterion(predictions, batch_next_states)
+            with torch.autocast(device_type=device, dtype=torch.float16):
+                continuous_states, discrete_states = model(batch_states)
+                # discrete_probabilities = torch.sigmoid(discrete_states)
+                # discrete_predictions = (discrete_probabilities > classification_threshold).float()
+                classification_loss = classification_loss_fn(discrete_states, target_discrete_states)
+                regression_loss = regression_loss_fn(continuous_states, target_continuous_states)
+                combined_loss = classification_loss + regression_loss
 
             # Backward pass
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(combined_loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
-            total_loss += loss.item()
-            avg_loss = total_loss / (idx+1)
+            total_loss += combined_loss.item()
+            avg_loss = total_loss / (idx + 1)
 
-            mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
+            mse = np.mean(
+                np.square(target_continuous_states.cpu().detach().numpy() - continuous_states.cpu().detach().numpy()))
             total_mse += mse.item()
-            avg_mse += total_mse / (idx+1)
-            loader.set_postfix({"loss": avg_loss, "mse": mse})
+            avg_mse += total_mse / (idx + 1)
+            loader.set_postfix({"loss": avg_loss, "mse": avg_mse, "classification_loss": classification_loss.item(),
+                                "regression_loss": regression_loss.item(), "combined_loss": combined_loss.item()})
         train_loss.append(avg_loss)
         train_mse.append(avg_mse)
 
@@ -79,13 +100,20 @@ for epoch in range(epochs):
             batch_states, batch_next_states = batch
             batch_states = torch.tensor(batch_states).float().to(device=device)
             batch_next_states = torch.tensor(batch_next_states).float().to(device=device)
+            target_continuous_states = batch_next_states[:, :output_size]
+            target_discrete_states = batch_next_states[:, output_size:]
             # Forward pass
-            predictions = model(batch_states)
-            loss = criterion(predictions, batch_next_states)
-            total_loss += loss.item()
+            continuous_states, discrete_states = model(batch_states)
+            # discrete_probabilities = torch.sigmoid(discrete_states)
+            # discrete_predictions = (discrete_probabilities > classification_threshold).float()
+            classification_loss = classification_loss_fn(discrete_states, target_discrete_states)
+            combined_loss = classification_loss + regression_loss_fn(continuous_states, target_continuous_states)
+
+            total_loss += combined_loss.item()
             avg_loss = total_loss / (idx + 1)
 
-            mse = np.mean(np.square(batch_next_states.cpu().detach().numpy() - predictions.cpu().detach().numpy()))
+            mse = np.mean(
+                np.square(target_continuous_states.cpu().detach().numpy() - continuous_states.cpu().detach().numpy()))
             total_mse += mse.item()
             avg_mse += total_mse / (idx + 1)
             loader.set_postfix({"loss": avg_loss, "mse": mse})

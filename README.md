@@ -44,3 +44,5 @@ then run the main script
 - [ ] provide extreme negative feedback for ball moving slowly or not at all  
 - [ ] try out a couple different model architectures to see which might start to provide usable results
 - [ ] predict score (continous integer mse) and hits as well (binary state cross-entropy)
+- [ ] make sure all inputs to the model are standardized
+  - currently position information is between 0 and 1 whereas velocity is between -1 and 1

@@ -4,6 +4,14 @@ import numpy as np
 def random_velocity(max=0.05, min=0.01):
     return np.random.choice([np.random.uniform(min, max), np.random.uniform(max * -1, min * -1)])
 
+def random_velocity_generator(min=0.01, max=0.05):
+    count = 0
+    while True:
+        random_x = np.random.uniform(min, max)
+        random_y = random_velocity(min=min, max=max)
+        count += 1
+        yield (random_x if count % 2 == 0 else random_x * -1, random_y)
+
 
 class EngineConfig:
     def __init__(self, ball_radius_percent=.02, field_width=1, field_height=1, paddle_width_percent=.01,
@@ -119,10 +127,7 @@ def _generate_pong_states(engine_config=EngineConfig()):
     # states = []  # To store ball position, velocity, and paddle positions
 
     dt = 1  # Time step
-    score_1 = 0
-    score_2 = 0
-    blocked_1 = 0
-    blocked_2 = 0
+    ball_random_velocity = random_velocity_generator(min=0.01)
 
     paddle_width = engine_config.paddle_width_percent * engine_config.field_width
     paddle_height = engine_config.paddle_height_percent * engine_config.field_height
@@ -136,18 +141,25 @@ def _generate_pong_states(engine_config=EngineConfig()):
     right_paddle = engine_config.paddle_class(paddle_width, paddle_height, field.width - paddle_width, field.height / 2,
                           random_velocity(), field)
     ball = engine_config.ball or Ball()
-    ball.reset(0.5, 0.5, random_velocity(0.03), random_velocity(0.03))
+    x, y = next(ball_random_velocity)
+    ball.reset(0.5, 0.5, x,y)
     ball.left_paddle=left_paddle
     ball.right_paddle=right_paddle
     ball.field=field
     ball.radius=engine_config.ball_radius_percent * engine_config.field_height
 
-    # Initialize paddle positions
+    ball_data = [ball.x, ball.y, ball.xv, ball.yv]
+    paddle_data = [left_paddle.x, left_paddle.y, left_paddle.yv, right_paddle.x, right_paddle.y, right_paddle.yv]
+    collision_data = [0, 0, 0, 0] # with what did the ball collide?
+    score_data = [0, 0] # was a score made?
+
 
     # Save the current state
-    yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, 0, 0, blocked_1, blocked_2]
+    yield ball_data, paddle_data, collision_data, score_data
+    # yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, 0, 0, blocked_1, blocked_2]
 
     while True:
+        score_data = [0, 0]
         # Update ball position
         left_paddle.update(dt)
         right_paddle.update(dt)
@@ -155,19 +167,23 @@ def _generate_pong_states(engine_config=EngineConfig()):
 
         # Reset if ball goes out of bounds (optional)
         if ball.x + ball.radius < 0 and not collisions[0]:
-            score_2 += 1
-            ball.reset(.5, .5, random_velocity(0.03), random_velocity(0.03))
+            score_data[1] = 1 # right team scored
+            x, y = next(ball_random_velocity)
+            ball.reset(.5, .5,  x, y)
         if ball.x - ball.radius > field.width and not collisions[1]:
-            score_1 += 1
-            ball.reset(.5, .5, random_velocity(0.03), random_velocity(0.03))
+            score_data[0] = 1 # left team scored
 
-        blocked_1 += collisions[0]
-        blocked_2 += collisions[1]
+            x, y = next(ball_random_velocity)
+            ball.reset(.5, .5, x, y)
 
         # Update paddle positions (static or random movement for simulation)
         # Here, paddles are static, but you can add logic for movement.
         # Update paddle position
 
         # Save the current state
-        yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, collisions[0],
-               collisions[1], blocked_1, blocked_2]
+        ball_data = [ball.x, ball.y, ball.xv, ball.yv]
+        paddle_data = [left_paddle.x, left_paddle.y, left_paddle.yv, right_paddle.x, right_paddle.y, right_paddle.yv]
+        collision_data = collisions  # with what did the ball collide?
+        yield ball_data, paddle_data, collision_data, score_data
+        # yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, collisions[0],
+        #        collisions[1], blocked_1, blocked_2]

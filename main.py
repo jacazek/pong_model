@@ -31,11 +31,28 @@ def scale_to_screen(x, y):
 engine_config = EngineConfig()
 engine_config.set_paddle_class(RandomPaddle)
 
+score_1 = 0
+score_2 = 0
+blocked_1 = 0
+blocked_2 = 0
+
+def update_scores(state):
+    global blocked_1, blocked_2, score_1, score_2
+    ball_data, paddle_data, collision_data, score_data = state
+    blocked_1 += collision_data[0]
+    blocked_2 += collision_data[1]
+    score_1 += score_data[0]
+    score_2 += score_data[1]
 
 # Function to render the state
 def render_state(state):
 
-    ball_x, ball_y, _, _, paddle1_y, paddle2_y, score_1, score_2, collision_1, collision_2, blocked_1, blocked_2 = state
+    ball_data, paddle_data, collision_data, score_data = state
+    print(collision_data)
+    print(score_data)
+    ball_x, ball_y, _, _ = ball_data
+    paddle1_x, paddle1_y, paddle1_vy, paddle2_x, paddle2_y, paddle2_vy = paddle_data
+    collision_1, collision_2, collision_3, collision_4 = collision_data
 
     # Clear the screen
     screen.fill(background_color)
@@ -88,6 +105,8 @@ for state in generate_fuzzy_states(engine_config):
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
             screen_width = event.w
             screen_height = event.h
+
+    update_scores(state)
 
     # Render the state
     render_state(state)

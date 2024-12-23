@@ -1,8 +1,8 @@
 from engine import generate_pong_states
-from fuzzy_engine import PongDataset, RNNModel
+from model import PongDataset, RNNModel
 import torch
 
-model = RNNModel(8, 8, 4, 1)
+model = RNNModel()
 model.load_state_dict(torch.load("pong_rnn_model.pth", weights_only=True))
 model.eval()
 
