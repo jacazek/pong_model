@@ -1,5 +1,5 @@
 # general parameters
-device = "cpu"
+device = "cuda"
 model_path = "pong_rnn_model.pth"
 
 # model parameters
