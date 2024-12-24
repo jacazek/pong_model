@@ -10,7 +10,8 @@ import os
 import matplotlib.pyplot as plt
 
 from model import PongDataset, TransformerModel, RNNModel
-from model_configuration import device, model_path, classification_threshold, discrete_output_size, output_size
+from model_configuration import device, discrete_output_size, output_size
+from runtime_configuration import Model, model_path
 
 batch_size = 1000
 
@@ -23,7 +24,7 @@ validate_dataset_steps = 10000
 validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps)
 validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
-model = TransformerModel().to(device=device)
+model = Model().to(device=device)
 # model = torch.compile(model)
 regression_loss_fn = nn.MSELoss()
 classification_loss_fn = nn.BCEWithLogitsLoss()

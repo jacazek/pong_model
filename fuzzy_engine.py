@@ -2,11 +2,8 @@ from collections import deque
 
 import torch
 from engine import EngineConfig, generate_pong_states
-from model import RNNModel, TransformerModel
-from model_configuration import model_path, \
-    input_sequence_length, classification_threshold
-
-Model = TransformerModel
+from model_configuration import input_sequence_length
+from runtime_configuration import Model, model_path, classification_threshold
 
 
 # def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
