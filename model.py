@@ -20,8 +20,6 @@ class PongDataset(IterableDataset):
     def generate(self):
         window_size = input_sequence_length + 1
         window = deque(maxlen=window_size)
-        # for i in range(window_size):
-        #     window.append([.5, .5] + [0.0 for i in range(6)])
         for ball_data, paddle_data, collision_data, score_data in self.generator(self.count,
                                                                                  engine_config=self.engine_config):
             window.append(ball_data + paddle_data + collision_data + score_data)
@@ -41,22 +39,23 @@ class TransformerModel(nn.Module):
         # Linear layer to expand input from 10 to 64 dimensions
         self.fc_feature_expansion = nn.Linear(input_size, hidden_size)
 
-        # Transformer encoder layer
+        # Consider using decoder only with flash attention
+
         self.transformer = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(
-                d_model=hidden_size,  # Dimension of the input
-                nhead=number_heads,  # Number of attention heads
-                dim_feedforward=hidden_size,  # Feedforward dimension
+                d_model=hidden_size,
+                nhead=number_heads,
+                dim_feedforward=hidden_size,
             ),
-            num_layers=num_layers  # Number of transformer layers
+            num_layers=num_layers
         )
 
         self.regression_head = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size * 2),
-            nn.ReLU(),
-            nn.Linear(hidden_size * 2, output_size)
+            nn.Tanh(),
+            nn.Linear(hidden_size, output_size)
         )
         self.classification_head = nn.Sequential(
+            nn.ReLU(),
             nn.Linear(hidden_size, discrete_output_size),
         )
 
@@ -73,7 +72,9 @@ class TransformerModel(nn.Module):
         x = self.transformer(x)
 
         # Step 4: Get the output of the transformer for each sequence
-        x = x.mean(dim=0)  # Average over the sequence dimension (optional)
+        # Average over the sequence dimension to reduce dimensions for use in predicting next state
+        # (similar to using last hidden state of LSTM)
+        x = x.mean(dim=0)
 
         regression_states = self.regression_head(x)
         classification_states = self.classification_head(x)
@@ -90,12 +91,10 @@ class RNNModel(nn.Module):
 
         self.regression_head = nn.Sequential(
             nn.Tanh(),
-            nn.Linear(hidden_size, hidden_size * 2),
-            nn.ReLU(),
-            nn.Linear(hidden_size * 2, output_size)
+            nn.Linear(hidden_size, output_size)
         )
         self.classification_head = nn.Sequential(
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(hidden_size, discrete_output_size),
         )
 

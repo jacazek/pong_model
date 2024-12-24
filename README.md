@@ -14,7 +14,7 @@ Install dependencies
 `pip install -r requirements.txt`
 
 ## Model configuration
-To adjust model parmaters, update the model_configuration.py
+To adjust model parameters, update the model_configuration.py
 
 If no GPU, be sure to set `device` to `cpu`
 
@@ -36,13 +36,13 @@ then run the main script
 ## Todo
 - [ ] Capture metrics for model performance during training  
 - [x] Include bounding box collisions in the input data  
-- [ ] separate paddle control and scoring from ball engine
+- [x] separate paddle control and scoring from ball engine
 - [ ] enable user control of paddles
 - [x] introduce variability in generator to paddle movements  
 - [ ] limit ball vector to certain degrees  
 - [ ] provide extreme negative feedback the further ball goes out of bounds during training  
 - [ ] provide extreme negative feedback for ball moving slowly or not at all  
 - [ ] try out a couple different model architectures to see which might start to provide usable results
-- [ ] predict score (continous integer mse) and hits as well (binary state cross-entropy)
+- [x] predict score (continuous integer mse) and hits as well (binary state cross-entropy)
 - [ ] make sure all inputs to the model are standardized
   - currently position information is between 0 and 1 whereas velocity is between -1 and 1

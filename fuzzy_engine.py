@@ -6,7 +6,7 @@ from model import RNNModel, TransformerModel
 from model_configuration import model_path, \
     input_sequence_length, classification_threshold
 
-Model = RNNModel
+Model = TransformerModel
 
 
 # def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
@@ -52,6 +52,7 @@ def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
         ball_data = ball_data.tolist()[0]
 
         discrete_probabilities = torch.sigmoid(discrete_data)
+        # print(discrete_probabilities)
         discrete_data = (discrete_probabilities > classification_threshold).int()
         discrete_data = discrete_data.tolist()[0]
         window.append(ball_data + paddle_data + discrete_data)

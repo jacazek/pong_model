@@ -1,10 +1,10 @@
 import numpy as np
 
 
-def random_velocity(max=0.05, min=0.01):
+def random_velocity(max=0.025, min=0.005):
     return np.random.choice([np.random.uniform(min, max), np.random.uniform(max * -1, min * -1)])
 
-def random_velocity_generator(min=0.01, max=0.05):
+def random_velocity_generator(min=0.005, max=0.025):
     count = 0
     while True:
         random_x = np.random.uniform(min, max)
@@ -14,7 +14,7 @@ def random_velocity_generator(min=0.01, max=0.05):
 
 
 class EngineConfig:
-    def __init__(self, ball_radius_percent=.02, field_width=1, field_height=1, paddle_width_percent=.01,
+    def __init__(self, ball_radius_percent=.01, field_width=1, field_height=1, paddle_width_percent=.01,
                  paddle_height_percent=.2, ball=None):
         self.ball_radius_percent = ball_radius_percent
         self.paddle_width_percent = paddle_width_percent
@@ -55,7 +55,7 @@ class RandomPaddle(Paddle):
 
     @staticmethod
     def random_paddle_velocity():
-        return random_velocity(min=.08, max=.1)
+        return random_velocity(min=.005, max=.025)
 
     def update(self, dt):
         self.count += 1
@@ -100,12 +100,12 @@ class Ball:
             bottom_field_collision = 1
 
         # Check for paddle collisions
-        if self.x - self.radius <= self.left_paddle.width and self.xv <= 0:  # Left paddle
+        if self.x - self.radius < self.left_paddle.width and self.xv <= 0:  # Left paddle
             if self.left_paddle.y <= self.y <= self.left_paddle.y + self.left_paddle.height:
                 self.xv *= -1  # Reverse horizontal velocity
                 left_paddle_collision = 1
 
-        if self.x + self.radius >= self.right_paddle.x and self.xv > 0:  # Right paddle
+        if self.x + self.radius > self.right_paddle.x and self.xv > 0:  # Right paddle
             if self.right_paddle.y <= self.y <= self.right_paddle.y + self.right_paddle.height:
                 self.xv *= -1  # Reverse horizontal velocity
                 right_paddle_collision = 1
@@ -127,7 +127,7 @@ def _generate_pong_states(engine_config=EngineConfig()):
     # states = []  # To store ball position, velocity, and paddle positions
 
     dt = 1  # Time step
-    ball_random_velocity = random_velocity_generator(min=0.01)
+    ball_random_velocity = random_velocity_generator()
 
     paddle_width = engine_config.paddle_width_percent * engine_config.field_width
     paddle_height = engine_config.paddle_height_percent * engine_config.field_height

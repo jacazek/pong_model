@@ -15,6 +15,7 @@ pygame.init()
 # Game parameters
 screen_width = 800
 screen_height = 400
+screen_quarter = int(screen_width/4)
 background_color = (0, 0, 0)  # Black
 ball_color = (255, 255, 255)  # White
 paddle_color = (255, 255, 255)  # White
@@ -24,9 +25,6 @@ paddle_color_collision = (255, 0, 0)  # White
 def scale_to_screen(x, y):
     return int(x * screen_width), int(y * screen_height)
 
-
-# Load a state (example state)
-# state = [400, 200, 5, -5, 170, 230]  # [ball_x, ball_y, ball_vx, ball_vy, paddle1_y, paddle2_y]
 
 engine_config = EngineConfig()
 engine_config.set_paddle_class(RandomPaddle)
@@ -48,8 +46,8 @@ def update_scores(state):
 def render_state(state):
 
     ball_data, paddle_data, collision_data, score_data = state
-    print(collision_data)
-    print(score_data)
+    # print(collision_data)
+    # print(score_data)
     ball_x, ball_y, _, _ = ball_data
     paddle1_x, paddle1_y, paddle1_vy, paddle2_x, paddle2_y, paddle2_vy = paddle_data
     collision_1, collision_2, collision_3, collision_4 = collision_data
@@ -58,7 +56,7 @@ def render_state(state):
     screen.fill(background_color)
 
     # Draw the ball
-    pygame.draw.circle(screen, ball_color, scale_to_screen(ball_x, ball_y), engine_config.ball_radius_percent*screen_height)
+    pygame.draw.circle(screen, ball_color, scale_to_screen(ball_x, ball_y), engine_config.ball_radius_percent*screen_width)
 
     # Draw the paddles
     paddle_width = engine_config.paddle_width_percent * screen_width
@@ -77,10 +75,11 @@ font_size = 24
 font = pygame.font.Font(None, font_size)  # None = default font
 text_color = (255, 255, 255)  # White
 def render_scores(score1, score2, blocked1, blocked2):
-    score1_surface = font.render(f"{score1}/{blocked1} | {score2}/{blocked2}", True, text_color)
-    # score2_surface = font.render(str(int(score2)), True, text_color)
-    screen.blit(score1_surface, (screen_width/2 - score1_surface.get_width()/2, 10))
-    # screen.blit(score2_surface, (screen_width - 60, 10))
+    score1_surface = font.render(f"{score1} | {blocked1}", True, text_color)
+    score2_surface = font.render(f"{score2} | {blocked2}", True, text_color)
+
+    screen.blit(score1_surface, (screen_quarter - score1_surface.get_width()/2, 10))
+    screen.blit(score2_surface, (screen_width - screen_quarter - score2_surface.get_width()/2, 10))
 
 def render_field():
     pygame.draw.line(screen, text_color, (screen_width/2, 0), (screen_width/2, screen_height), 1)
@@ -112,7 +111,7 @@ for state in generate_fuzzy_states(engine_config):
     render_state(state)
 
     # Add a delay to control the frame rate
-    pygame.time.delay(60)
+    pygame.time.delay(30)
 
 # Quit Pygame
 pygame.quit()
