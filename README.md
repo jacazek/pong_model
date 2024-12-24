@@ -46,3 +46,6 @@ then run the main script
 - [x] predict score (continuous integer mse) and hits as well (binary state cross-entropy)
 - [ ] make sure all inputs to the model are standardized
   - currently position information is between 0 and 1 whereas velocity is between -1 and 1
+- [ ] create separate training configuration file
+  - include options to adjust generated paddle velocities to control even data generation
+- [ ] introduce variability configuration setting for models to produce more unpredictable output
