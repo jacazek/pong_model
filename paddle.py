@@ -30,10 +30,10 @@ class UserPaddle(Paddle):
         self.yv = 0
         keys = pygame.key.get_pressed()
         if keys[self.up_key]:
-            if self.y > 0:
+            if self.y > self.field.top:
                 self.yv = -.01 # Move up
         elif keys[self.down_key]:
-            if self.y + self.height < self.field.height:
+            if self.y + self.height < self.field.bottom:
                 self.yv = .01  # Move down
 
         # if assigned key is pressed, move paddle in indicated direction at configured velocity until collision with box
@@ -55,7 +55,7 @@ class RandomPaddle(Paddle):
     def update(self, dt):
         self.count += 1
         self.y += self.yv * dt
-        if self.y <= 0 or self.y + self.height >= self.field.height:
+        if self.y <= self.field.top or self.y + self.height >= self.field.bottom:
             self.yv *= -1  # Reverse vertical velocity
         else:
             self.yv = self.random_paddle_velocity() if self.count % 100 == 0 else self.yv
@@ -71,7 +71,7 @@ class UserPaddleFactory(PaddleFactory):
     def __init__(self):
         self.count = 0
 
-    def create_paddle(self, width, height, x, y, field, ):
+    def create_paddle(self, width, height, x, y, field):
         if self.count % 2 == 0:
             self.count += 1
             return UserPaddle(width, height, x, y, 0, field, pygame.K_q, pygame.K_a)

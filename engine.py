@@ -17,7 +17,7 @@ def random_velocity_generator(min=0.005, max=0.025):
 
 
 class EngineConfig:
-    def __init__(self, ball_radius_percent=.01, field_width=1, field_height=1, paddle_width_percent=.01,
+    def __init__(self, ball_radius_percent=.01, field_width=1.0, field_height=1.0, paddle_width_percent=.01,
                  paddle_height_percent=.2, ball=None):
         self.ball_radius_percent = ball_radius_percent
         self.paddle_width_percent = paddle_width_percent
@@ -36,6 +36,10 @@ class Field:
     def __init__(self, width, height):
         self.width = width
         self.height = height
+        self.left = width / 2.0 * -1
+        self.right = width / 2.0
+        self.top = height / 2.0 * -1
+        self.bottom = height / 2.0
 
 
 class Ball:
@@ -64,16 +68,16 @@ class Ball:
         right_paddle_collision = 0
         top_field_collision = 0
         bottom_field_collision = 0
-        if self.y - self.radius <= 0:
+        if self.y - self.radius <= self.field.top:
             self.yv *= -1
             top_field_collision = 1
 
-        if self.y + self.radius >= self.field.height:
+        if self.y + self.radius >= self.field.bottom:
             self.yv *= -1  # Reverse vertical velocity
             bottom_field_collision = 1
 
         # Check for paddle collisions
-        if self.x - self.radius < self.left_paddle.width and self.xv <= 0:  # Left paddle
+        if self.x - self.radius < self.left_paddle.x + self.left_paddle.width and self.xv <= 0:  # Left paddle
             if self.left_paddle.y <= self.y <= self.left_paddle.y + self.left_paddle.height:
                 self.xv *= -1  # Reverse horizontal velocity
                 left_paddle_collision = 1
@@ -102,19 +106,19 @@ def _generate_pong_states(engine_config=EngineConfig()):
     dt = 1  # Time step
     ball_random_velocity = random_velocity_generator()
 
-    paddle_width = engine_config.paddle_width_percent * engine_config.field_width
-    paddle_height = engine_config.paddle_height_percent * engine_config.field_height
-
+    paddle_width = engine_config.paddle_width_percent /engine_config.field_width * engine_config.field_width
+    paddle_height = engine_config.paddle_height_percent / engine_config.field_height * engine_config.field_height
+    # print(f"{paddle_width}, {paddle_height}")
     # Initialize ball position and velocity
     field = Field(engine_config.field_width, engine_config.field_height)
 
     # convert to using factory?
-    left_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, 0, field.height / 2, field)
-    right_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.width - paddle_width,
-                                                              field.height / 2, field)
+    left_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.left, 0 - paddle_height/2, field)
+    right_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.right - paddle_width,
+                                                              0 - paddle_height/2, field)
     ball = engine_config.ball or Ball()
     x, y = next(ball_random_velocity)
-    ball.reset(0.5, 0.5, x, y)
+    ball.reset(0, 0, x, y)
     ball.left_paddle = left_paddle
     ball.right_paddle = right_paddle
     ball.field = field
@@ -137,15 +141,15 @@ def _generate_pong_states(engine_config=EngineConfig()):
         collisions = ball.update(dt)
 
         # Reset if ball goes out of bounds (optional)
-        if ball.x + ball.radius < 0 and not collisions[0]:
+        if ball.x + ball.radius < field.left and not collisions[0]:
             score_data[1] = 1  # right team scored
             x, y = next(ball_random_velocity)
-            ball.reset(.5, .5, x, y)
-        if ball.x - ball.radius > field.width and not collisions[1]:
+            ball.reset(0, 0, x, y)
+        if ball.x - ball.radius > field.right and not collisions[1]:
             score_data[0] = 1  # left team scored
 
             x, y = next(ball_random_velocity)
-            ball.reset(.5, .5, x, y)
+            ball.reset(0, 0, x, y)
 
         # Update paddle positions (static or random movement for simulation)
         # Here, paddles are static, but you can add logic for movement.

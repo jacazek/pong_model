@@ -49,3 +49,5 @@ then run the main script
 - [ ] create separate training configuration file
   - include options to adjust generated paddle velocities to control even data generation
 - [ ] introduce variability configuration setting for models to produce more unpredictable output
+- [ ] Let the model control scaling factor of the game for extra glitchy experience
+- [ ] Consider how to make the model control arbitrary number of balls...
