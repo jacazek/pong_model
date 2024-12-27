@@ -2,8 +2,9 @@ from collections import deque
 
 import torch
 from engine import EngineConfig, generate_pong_states
-from model_configuration import input_sequence_length
-from runtime_configuration import Model, model_path, classification_threshold
+from model_configuration import input_sequence_length, discrete_output_size, device
+from runtime_configuration import Model, model_path, classification_threshold, temperature_variance
+import numpy as np
 
 
 # def generate_random_fuzzy_states(engine_config=EngineConfig(), num_steps=1000):
@@ -34,7 +35,7 @@ from runtime_configuration import Model, model_path, classification_threshold
 
 def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
     states = generate_pong_states(num_steps=num_steps, engine_config=engine_config)
-    model = Model()
+    model = Model().to(device=device)
     model.load_state_dict(torch.load(model_path, weights_only=True))
     model.eval()
     window_size = input_sequence_length
@@ -45,7 +46,10 @@ def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
         window.append(ball_data + paddle_data + collision_data + score_data)
     for _, paddle_data, _, _ in states:
         # print(window[-1])
-        ball_data, discrete_data = model(torch.tensor([window]).float())
+        temperature = torch.from_numpy(
+            np.random.uniform(1.0 - temperature_variance, 1.0 + temperature_variance, discrete_output_size)).to(
+            device=device)
+        ball_data, discrete_data = model(torch.tensor([window]).to(device=device, dtype=torch.float), temperature)
         ball_data = ball_data.tolist()[0]
 
         discrete_probabilities = torch.sigmoid(discrete_data)

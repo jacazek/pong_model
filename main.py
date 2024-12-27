@@ -1,7 +1,8 @@
 """
 Given a balls initial position, direction and
 """
-from engine import generate_pong_states, EngineConfig, RandomPaddle
+from engine import generate_pong_states, EngineConfig
+from paddle import RandomPaddleFactory
 from fuzzy_engine import generate_fuzzy_states
 
 print("Hello world!")
@@ -27,12 +28,17 @@ def scale_to_screen(x, y):
 
 
 engine_config = EngineConfig()
-engine_config.set_paddle_class(RandomPaddle)
+engine_config.set_paddle_factory(RandomPaddleFactory(max_velocity=0.05))
 
 score_1 = 0
 score_2 = 0
 blocked_1 = 0
 blocked_2 = 0
+
+font_size = 24
+font = pygame.font.Font(None, font_size) # None = default font
+small_font = pygame.font.Font(None, 18)
+text_color = (255, 255, 255)  # White
 
 def update_scores(state):
     global blocked_1, blocked_2, score_1, score_2
@@ -43,7 +49,7 @@ def update_scores(state):
     score_2 += score_data[1]
 
 # Function to render the state
-def render_state(state):
+def render_state(state, count):
 
     ball_data, paddle_data, collision_data, score_data = state
     # print(collision_data)
@@ -66,14 +72,16 @@ def render_state(state):
     pygame.draw.rect(screen, paddle_color_collision if collision_2 else paddle_color, (screen_width - paddle_width, paddle2_y *  screen_height, paddle_width, paddle_height))  # Right paddle
 
     render_scores(score_1, score_2, blocked_1, blocked_2)
+
     render_field()
+
+    debug_surface = small_font.render(f"{count}", True, (0, 255, 0))
+    screen.blit(debug_surface, (0, 10))
 
     # Update the display
     pygame.display.flip()
 
-font_size = 24
-font = pygame.font.Font(None, font_size)  # None = default font
-text_color = (255, 255, 255)  # White
+
 def render_scores(score1, score2, blocked1, blocked2):
     score1_surface = font.render(f"{score1} | {blocked1}", True, text_color)
     score2_surface = font.render(f"{score2} | {blocked2}", True, text_color)
@@ -91,8 +99,8 @@ pygame.display.set_caption("Pong State Renderer")
 # Main loop to render the state
 running = True
 
-for state in generate_fuzzy_states(engine_config):
-# for state in generate_pong_states(num_steps=50000, engine_config=engine_config):
+for index, state in enumerate(generate_fuzzy_states(engine_config)):
+# for index, state in enumerate(generate_pong_states(num_steps=50000, engine_config=engine_config)):
     if not running:
         break
     for event in pygame.event.get():
@@ -108,7 +116,7 @@ for state in generate_fuzzy_states(engine_config):
     update_scores(state)
 
     # Render the state
-    render_state(state)
+    render_state(state, index)
 
     # Add a delay to control the frame rate
     pygame.time.delay(30)
