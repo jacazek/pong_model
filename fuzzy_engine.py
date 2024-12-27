@@ -36,7 +36,7 @@ import numpy as np
 def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
     states = generate_pong_states(num_steps=num_steps, engine_config=engine_config)
     model = Model().to(device=device)
-    model.load_state_dict(torch.load(model_path, weights_only=True))
+    model.load_state_dict(torch.load(model_path, weights_only=True, map_location=torch.device(device)))
     model.eval()
     window_size = input_sequence_length
     window = deque(maxlen=window_size)
