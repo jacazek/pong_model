@@ -49,6 +49,7 @@ def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None):
         temperature = torch.from_numpy(
             np.random.uniform(1.0 - temperature_variance, 1.0 + temperature_variance, discrete_output_size)).to(
             device=device)
+        print(temperature.tolist())
         ball_data, discrete_data = model(torch.tensor([window]).to(device=device, dtype=torch.float), temperature)
         ball_data = ball_data.tolist()[0]
 

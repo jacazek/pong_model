@@ -2,7 +2,7 @@
 Given a balls initial position, direction and
 """
 from engine import generate_pong_states, EngineConfig
-from paddle import RandomPaddleFactory
+from paddle import RandomPaddleFactory, UserPaddleFactory
 from fuzzy_engine import generate_fuzzy_states
 
 print("Hello world!")
@@ -28,7 +28,7 @@ def scale_to_screen(x, y):
 
 
 engine_config = EngineConfig()
-engine_config.set_paddle_factory(RandomPaddleFactory(max_velocity=0.05))
+engine_config.set_paddle_factory(UserPaddleFactory())
 
 score_1 = 0
 score_2 = 0

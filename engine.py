@@ -31,6 +31,7 @@ class EngineConfig:
         self.paddle_factory = paddle_factory
 
 
+
 class Field:
     def __init__(self, width, height):
         self.width = width

@@ -4,4 +4,4 @@ from model import TransformerModel, RNNModel
 Model = RNNModel
 model_path = f"{Model.__name__}_weights.pth"
 classification_threshold = 0.99
-temperature_variance = 0.9
+temperature_variance = 0.0

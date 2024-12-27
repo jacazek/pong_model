@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import pygame
 
 
 class Paddle(ABC):
@@ -20,12 +21,23 @@ class Paddle(ABC):
 
 
 class UserPaddle(Paddle):
-    def __init__(self, width, height, x, y, yv, field):
+    def __init__(self, width, height, x, y, yv, field, up_key, down_key):
         Paddle.__init__(self, width, height, x, y, yv, field)
+        self.up_key = up_key
+        self.down_key = down_key
 
     def update(self, dt):
+        self.yv = 0
+        keys = pygame.key.get_pressed()
+        if keys[self.up_key]:
+            if self.y > 0:
+                self.yv = -.01 # Move up
+        elif keys[self.down_key]:
+            if self.y + self.height < self.field.height:
+                self.yv = .01  # Move down
+
         # if assigned key is pressed, move paddle in indicated direction at configured velocity until collision with box
-        pass
+        self.y += self.yv * dt
 
 
 class RandomPaddle(Paddle):
@@ -55,10 +67,17 @@ class PaddleFactory(ABC):
         pass
 
 
-class UserPaddleFactory(ABC):
-    def create_paddle(self, width, height, x, y, field):
-        pass
+class UserPaddleFactory(PaddleFactory):
+    def __init__(self):
+        self.count = 0
 
+    def create_paddle(self, width, height, x, y, field, ):
+        if self.count % 2 == 0:
+            self.count += 1
+            return UserPaddle(width, height, x, y, 0, field, pygame.K_q, pygame.K_a)
+        if self.count %2 == 1:
+            self.count += 1
+            return UserPaddle(width, height, x, y, 0, field, pygame.K_UP, pygame.K_DOWN)
 
 class RandomPaddleFactory(PaddleFactory):
     def create_paddle(self, width, height, x, y, field):
