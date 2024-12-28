@@ -51,3 +51,5 @@ then run the main script
 - [ ] introduce variability configuration setting for models to produce more unpredictable output
 - [ ] Let the model control scaling factor of the game for extra glitchy experience
 - [ ] Consider how to make the model control arbitrary number of balls...
+- [ ] Create common loop for fuzzy and exact engines (mainly paddle control)
+- [ ] Train the model on resetting the game when best of X reached

@@ -45,12 +45,14 @@ class RandomPaddle(Paddle):
         Paddle.__init__(self, width, height, x, y, 0, field)
         self.min_velocity = min_velocity
         self.max_velocity = max_velocity
-        self.yv = self.random_paddle_velocity()
         self.count = 0
+        self.random_ng = np.random.default_rng()
+        self.yv = self.random_paddle_velocity()
 
     def random_paddle_velocity(self):
-        return np.random.choice([np.random.uniform(self.min_velocity, self.max_velocity),
-                                 np.random.uniform(self.max_velocity * -1, self.min_velocity * -1)])
+        return self.random_ng.uniform(-1*self.max_velocity, self.max_velocity)
+        # return np.random.choice([np.random.uniform(self.min_velocity, self.max_velocity),
+        #                          np.random.uniform(self.max_velocity * -1, self.min_velocity * -1)])
 
     def update(self, dt):
         self.count += 1

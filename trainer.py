@@ -4,7 +4,7 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from engine import generate_pong_states
+from exact_engine import generate_pong_states
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -14,12 +14,12 @@ from model_configuration import device, discrete_output_size, output_size
 from runtime_configuration import Model, model_path
 
 batch_size = 1000
-train_data_set_steps = 3200000
+train_data_set_steps = 4000000
 validate_dataset_steps = 10000
 num_workers = int(os.cpu_count() / 16)
 learning_rate = 0.001
-gamma = 0.95
-epochs = 100
+gamma = 0.90
+epochs = 150
 
 def train():
     train_dataset = PongDataset(generate_pong_states, train_data_set_steps)
@@ -38,7 +38,7 @@ def train():
     #     {'params': list(model.fc_feature_expansion.parameters()) + list(model.lstm.parameters()) + list(
     #         model.regression_head.parameters()), 'lr': learning_rate}
     #
-    # ])
+    # ])RandomPaddleFactory
 
     scaler = torch.cuda.amp.GradScaler()
     scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
@@ -128,7 +128,7 @@ def train():
     ax2.plot(x, train_mse, label="train mse")
     ax2.plot(x, validation_mse, label="validation mse")
     ax2.legend(loc="upper right")
-    plt.savefig("train_results.png")
+    plt.savefig(f"{os.path.basename(model_path)}.train_results.png")
     plt.show()
 
 

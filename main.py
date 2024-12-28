@@ -1,7 +1,8 @@
 """
 Given a balls initial position, direction and
 """
-from engine import generate_pong_states, EngineConfig
+from engine import EngineConfig
+from exact_engine import generate_pong_states
 from paddle import RandomPaddleFactory, UserPaddleFactory
 from fuzzy_engine import generate_fuzzy_states
 
@@ -22,8 +23,8 @@ ball_color = (255, 255, 255)  # White
 paddle_color = (255, 255, 255)  # White
 paddle_color_collision = (255, 0, 0)  # White
 
-field_width = 2.0
-field_height = 2.0
+field_width = 1.0
+field_height = 1.0
 half_screen_width = screen_width / 2.0
 half_screen_height = screen_height / 2.0
 
@@ -40,7 +41,7 @@ def scale_to_screen(point):
 
 
 engine_config = EngineConfig(field_width=field_width, field_height=field_height)
-engine_config.set_paddle_factory(UserPaddleFactory())
+engine_config.set_paddle_factory(RandomPaddleFactory(max_velocity=.009))
 
 score_1 = 0
 score_2 = 0
@@ -109,8 +110,8 @@ pygame.display.set_caption("Pong State Renderer")
 # Main loop to render the state
 running = True
 
-for index, state in enumerate(generate_fuzzy_states(engine_config)):
-# for index, state in enumerate(generate_pong_states(num_steps=50000, engine_config=engine_config)):
+# for index, state in enumerate(generate_fuzzy_states(engine_config)):
+for index, state in enumerate(generate_pong_states(num_steps=50000, engine_config=engine_config)):
     if not running:
         break
     for event in pygame.event.get():
@@ -129,7 +130,7 @@ for index, state in enumerate(generate_fuzzy_states(engine_config)):
     render_state(state, index)
 
     # Add a delay to control the frame rate
-    pygame.time.delay(30)
+    # pygame.time.delay(30)
 
 # Quit Pygame
 pygame.quit()
