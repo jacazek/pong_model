@@ -1,16 +1,26 @@
 # pong_model
 The dumbest game you might ever play
 ## Installation
-Create a virtual environment  
+1. Create a virtual environment  
 `python -m venv .venv`
 
-Activate the environment  
+
+2. Activate the environment  
 `source .venv/bin/active`
 
-If installing for AMD GPU training/inference  
-`pip install -r requirements-rocm.txt`
 
-Install dependencies  
+3. If installing for AMD GPU training/inference
+   1. `pip install -r requirements-rocm.txt`
+   2. For MI100 gpu, 
+      1. clone flash attention repo if using flash attention and install  
+      ```git clone https://github.com/Dao-AILab/flash-attention.git  dependencies/flash-attention```
+      2. Navigate to flash_attention direcotry  
+      ```cd dependecies/flash_attention```
+      2. Install using ROCm environment  
+      ```export GPU_ARCHS=gfx908 && rocm-python setup.py install```
+
+
+4. Install all other dependencies  
 `pip install -r requirements.txt`
 
 ## Model configuration

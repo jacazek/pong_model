@@ -1,4 +1,5 @@
 from model import TransformerModel, RNNModel
+from Transformer import AlternateTransformerModel
 
 # model to use during training and inference
 Model = RNNModel

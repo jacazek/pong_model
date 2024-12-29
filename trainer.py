@@ -14,12 +14,12 @@ from model_configuration import device, discrete_output_size, output_size
 from runtime_configuration import Model, model_path
 
 batch_size = 1000
-train_data_set_steps = 4000000
+train_data_set_steps = 3200000
 validate_dataset_steps = 10000
 num_workers = int(os.cpu_count() / 16)
 learning_rate = 0.001
-gamma = 0.90
-epochs = 150
+gamma = 0.95
+epochs = 50
 
 def train():
     train_dataset = PongDataset(generate_pong_states, train_data_set_steps)

@@ -3,7 +3,7 @@ Given a balls initial position, direction and
 """
 from engine import EngineConfig
 from exact_engine import generate_pong_states
-from paddle import RandomPaddleFactory, UserPaddleFactory
+from pong_paddle import RandomPaddleFactory, UserPaddleFactory
 from fuzzy_engine import generate_fuzzy_states
 
 print("Hello world!")
@@ -41,7 +41,7 @@ def scale_to_screen(point):
 
 
 engine_config = EngineConfig(field_width=field_width, field_height=field_height)
-engine_config.set_paddle_factory(RandomPaddleFactory(max_velocity=.009))
+engine_config.set_paddle_factory(UserPaddleFactory())
 
 score_1 = 0
 score_2 = 0
@@ -110,8 +110,8 @@ pygame.display.set_caption("Pong State Renderer")
 # Main loop to render the state
 running = True
 
-# for index, state in enumerate(generate_fuzzy_states(engine_config)):
-for index, state in enumerate(generate_pong_states(num_steps=50000, engine_config=engine_config)):
+for index, state in enumerate(generate_fuzzy_states(engine_config)):
+# for index, state in enumerate(generate_pong_states(num_steps=50000, engine_config=engine_config)):
     if not running:
         break
     for event in pygame.event.get():
@@ -130,7 +130,7 @@ for index, state in enumerate(generate_pong_states(num_steps=50000, engine_confi
     render_state(state, index)
 
     # Add a delay to control the frame rate
-    # pygame.time.delay(30)
+    pygame.time.delay(30)
 
 # Quit Pygame
 pygame.quit()

@@ -6,7 +6,7 @@ from torch import nn as nn
 from torch.utils.data import IterableDataset
 
 from engine import EngineConfig
-from paddle import RandomPaddleFactory
+from pong_paddle import RandomPaddleFactory
 from model_configuration import input_sequence_length, input_size, hidden_size, number_heads, num_layers, output_size, \
     discrete_output_size
 from abc import ABC, abstractmethod
@@ -36,14 +36,14 @@ class PongDataset(IterableDataset):
         self.prepare_worker()
         window_size = input_sequence_length + 1
         window = deque(maxlen=window_size)
-        for ball_data, paddle_data, collision_data, score_data in self.generator(engine_config=self.engine_config, num_steps=self.count):
+        for ball_data, paddle_data, collision_data, score_data in self.generator(engine_config=self.engine_config,
+                                                                                 num_steps=self.count):
             window.append(ball_data + paddle_data + collision_data + score_data)
             if len(window) == window_size:
                 # print(list(window))
                 states = np.array(window)
                 next_state = np.array(ball_data + collision_data + score_data)
                 yield states[:input_sequence_length], next_state
-
 
     # def generate(self):
     #     """
@@ -102,24 +102,37 @@ class TransformerModel(BasePongModel):
     def __init__(self):
         super(TransformerModel, self).__init__()
         # Consider using decoder only with flash attention
+        self.positional_encoding = nn.Parameter(torch.zeros(1, 100, hidden_size))
 
-        self.transformer = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(
-                d_model=hidden_size,
-                nhead=number_heads,
-                dim_feedforward=hidden_size,
-            ),
-            num_layers=num_layers
-        )
+        # self.transformer = nn.TransformerEncoder(
+        self.transformer_list = nn.ModuleList([nn.TransformerEncoderLayer(
+            d_model=hidden_size,
+            nhead=number_heads,
+            dim_feedforward=hidden_size,
+            batch_first=True,
+        ) for _ in range(num_layers)])
+        #     num_layers=num_layers,
+        # )
+        # self.transformer = nn.TransformerDecoderLayer(
+        #     d_model=hidden_size,
+        #     nhead=number_heads,
+        #     dim_feedforward=hidden_size,
+        #     # dropout=dropout
+        # )
 
     def _forward(self, x):
-        x = x.permute(1, 0, 2)  # Shape: (seq_len, batch_size, hidden_dim)
-        x = self.transformer(x)
+        seq_len = x.size(1)
+        positions = self.positional_encoding[:, :seq_len, :]
+        causal_mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool().to(x.device)
+        x = x + positions
+        # x = x.permute(1, 0, 2)  # Shape: (seq_len, batch_size, hidden_dim)
+        for transformer in self.transformer_list:
+            x = transformer(x, src_mask=causal_mask, is_causal=True)
 
         # Get the output of the transformer for each sequence by
         # Averaging over the sequence dimension to reduce dimensions for use in predicting next state
         # (similar to using last hidden state of LSTM)
-        return x.mean(dim=0)
+        return x.mean(dim=1)
 
 
 class RNNModel(BasePongModel):

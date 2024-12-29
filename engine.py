@@ -1,6 +1,6 @@
 import numpy as np
 
-from paddle import UserPaddleFactory, Paddle
+from pong_paddle import UserPaddleFactory, Paddle
 
 
 # def random_velocity(max=0.025, min=0.005):
