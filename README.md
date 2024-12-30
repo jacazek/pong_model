@@ -45,6 +45,8 @@ then run the main script
 
 ## Todo
 - [ ] Capture metrics for model performance during training  
+- [x] incorporate MLFlow for tracking progress
+- [ ] parameterize the model variant via CLI (and other runtime args)
 - [x] Include bounding box collisions in the input data  
 - [x] separate paddle control and scoring from ball engine
 - [ ] enable user control of paddles

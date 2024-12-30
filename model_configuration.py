@@ -10,4 +10,4 @@ num_layers = 2
 number_heads = 8
 
 # training parameters
-input_sequence_length=10
+input_sequence_length=20
