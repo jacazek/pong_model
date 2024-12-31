@@ -16,11 +16,15 @@ The dumbest game you might ever play
       ```git clone https://github.com/Dao-AILab/flash-attention.git  dependencies/flash-attention```
       2. Navigate to flash_attention direcotry  
       ```cd dependecies/flash_attention```
+      3. Modify the setup.py to include gfx908 in supported archs
       2. Install using ROCm environment  
       ```export GPU_ARCHS=gfx908 && rocm-python setup.py install```
 
+5. If installing for Nvidia GPU
+   1. `pip install flash-attn --no-build-isolation`
 
-4. Install all other dependencies  
+
+5. Install all other dependencies  
 `pip install -r requirements.txt`
 
 ## Model configuration
