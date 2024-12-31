@@ -1,16 +1,26 @@
 # pong_model
 The dumbest game you might ever play
 ## Installation
-Create a virtual environment  
+1. Create a virtual environment  
 `python -m venv .venv`
 
-Activate the environment  
+
+2. Activate the environment  
 `source .venv/bin/active`
 
-If installing for AMD GPU training/inference  
-`pip install -r requirements-rocm.txt`
 
-Install dependencies  
+3. If installing for AMD GPU training/inference
+   1. `pip install -r requirements-rocm.txt`
+   2. For MI100 gpu, 
+      1. clone flash attention repo if using flash attention and install  
+      ```git clone https://github.com/Dao-AILab/flash-attention.git  dependencies/flash-attention```
+      2. Navigate to flash_attention direcotry  
+      ```cd dependecies/flash_attention```
+      2. Install using ROCm environment  
+      ```export GPU_ARCHS=gfx908 && rocm-python setup.py install```
+
+
+4. Install all other dependencies  
 `pip install -r requirements.txt`
 
 ## Model configuration
@@ -35,6 +45,8 @@ then run the main script
 
 ## Todo
 - [ ] Capture metrics for model performance during training  
+- [x] incorporate MLFlow for tracking progress
+- [ ] parameterize the model variant via CLI (and other runtime args)
 - [x] Include bounding box collisions in the input data  
 - [x] separate paddle control and scoring from ball engine
 - [ ] enable user control of paddles
@@ -49,3 +61,7 @@ then run the main script
 - [ ] create separate training configuration file
   - include options to adjust generated paddle velocities to control even data generation
 - [ ] introduce variability configuration setting for models to produce more unpredictable output
+- [ ] Let the model control scaling factor of the game for extra glitchy experience
+- [ ] Consider how to make the model control arbitrary number of balls...
+- [ ] Create common loop for fuzzy and exact engines (mainly paddle control)
+- [ ] Train the model on resetting the game when best of X reached

@@ -163,4 +163,5 @@ cython_debug/
 .idea/
 *.pth
 
-train_results.png
+*train_results.png
+dependencies/

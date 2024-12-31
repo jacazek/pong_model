@@ -1,8 +1,9 @@
 """
 Given a balls initial position, direction and
 """
-from engine import generate_pong_states, EngineConfig
-from paddle import RandomPaddleFactory, UserPaddleFactory
+from engine import EngineConfig
+from exact_engine import generate_pong_states
+from pong_paddle import RandomPaddleFactory, UserPaddleFactory
 from fuzzy_engine import generate_fuzzy_states
 
 print("Hello world!")
@@ -22,12 +23,24 @@ ball_color = (255, 255, 255)  # White
 paddle_color = (255, 255, 255)  # White
 paddle_color_collision = (255, 0, 0)  # White
 
+field_width = 1.0
+field_height = 1.0
+half_screen_width = screen_width / 2.0
+half_screen_height = screen_height / 2.0
 
-def scale_to_screen(x, y):
+
+def translate(point):
+    x,y = point
+    return x + half_screen_width, y + half_screen_height
+
+def scale_to_screen(point):
+    x, y = point
+    x = (x + field_width / 2.0) / field_width
+    y = (y + field_height / 2.0) / field_height
     return int(x * screen_width), int(y * screen_height)
 
 
-engine_config = EngineConfig()
+engine_config = EngineConfig(field_width=field_width, field_height=field_height)
 engine_config.set_paddle_factory(UserPaddleFactory())
 
 score_1 = 0
@@ -52,8 +65,6 @@ def update_scores(state):
 def render_state(state, count):
 
     ball_data, paddle_data, collision_data, score_data = state
-    # print(collision_data)
-    # print(score_data)
     ball_x, ball_y, _, _ = ball_data
     paddle1_x, paddle1_y, paddle1_vy, paddle2_x, paddle2_y, paddle2_vy = paddle_data
     collision_1, collision_2, collision_3, collision_4 = collision_data
@@ -62,14 +73,14 @@ def render_state(state, count):
     screen.fill(background_color)
 
     # Draw the ball
-    pygame.draw.circle(screen, ball_color, scale_to_screen(ball_x, ball_y), engine_config.ball_radius_percent*screen_width)
+    pygame.draw.circle(screen, ball_color, scale_to_screen((ball_x, ball_y)), engine_config.ball_radius_percent*(screen_width / field_width))
 
     # Draw the paddles
-    paddle_width = engine_config.paddle_width_percent * screen_width
-    paddle_height = engine_config.paddle_height_percent * screen_height
+    paddle_width = engine_config.paddle_width_percent / field_width * screen_width
+    paddle_height = engine_config.paddle_height_percent / field_height * screen_height
 
-    pygame.draw.rect(screen, paddle_color_collision if collision_1 else paddle_color, (0, paddle1_y * screen_height, paddle_width, paddle_height))  # Left paddle
-    pygame.draw.rect(screen, paddle_color_collision if collision_2 else paddle_color, (screen_width - paddle_width, paddle2_y *  screen_height, paddle_width, paddle_height))  # Right paddle
+    pygame.draw.rect(screen, paddle_color_collision if collision_1 else paddle_color, scale_to_screen((paddle1_x, paddle1_y)) + (paddle_width, paddle_height))  # Left paddle
+    pygame.draw.rect(screen, paddle_color_collision if collision_2 else paddle_color, scale_to_screen((paddle2_x, paddle2_y)) + (paddle_width, paddle_height))  # Right paddle
 
     render_scores(score_1, score_2, blocked_1, blocked_2)
 
