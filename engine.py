@@ -9,7 +9,7 @@ from pong_paddle import UserPaddleFactory, Paddle
 #     [x, y] = random_ng.uniform(max * -1, max, 2)
 #     return x, y
 
-def random_velocity_generator(min=0.001, max=0.025):
+def random_velocity_generator(min=0.005, max=0.025):
     # count = 0
     random_ng = np.random.default_rng()
     while True:

@@ -75,11 +75,11 @@ class BasePongModel(nn.Module, ABC):
         # )
 
         self.regression_head = nn.Sequential(
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_size, output_size)
         )
         self.classification_head = nn.Sequential(
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_size, discrete_output_size),
         )
 

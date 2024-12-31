@@ -116,6 +116,7 @@ def train():
                 mlflow.log_metrics({
                     f"train_loss": avg_loss,
                     f"train_mse": avg_mse,
+                    f"learning_rate": scheduler.get_lr()[0],
                 }, step=epoch)
             total_loss = 0
             avg_loss = 0
@@ -151,7 +152,8 @@ def train():
                 }, step=epoch)
             scheduler.step()
 
-        mlflow_pytorch.log_model(model, "model")
+            if (epoch + 1) % 5 == 0:
+                mlflow_pytorch.log_model(model, f"model_e{epoch}")
 
     torch.save(model.state_dict(), model_path)
 
