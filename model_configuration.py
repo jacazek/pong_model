@@ -1,5 +1,5 @@
 # general parameters
-device = "cuda"
+device = "cpu"
 
 # model parameters
 input_size = 16
