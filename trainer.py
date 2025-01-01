@@ -10,7 +10,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import mlflow
-import mlflow.pytorch as mlflow_pytorch
+from model_loaders import save_mlflow_model, save_pytorch_model
 
 from models import PongDataset, ModelConfiguration
 from runtime_configuration import Model, model_path
@@ -36,7 +36,7 @@ validate_dataset_steps = 10000
 num_workers = int(os.cpu_count() / 16)
 learning_rate = 0.001
 gamma = 0.95
-epochs = 5
+epochs = 100
 
 def train():
     train_dataset = PongDataset(generate_pong_states, train_data_set_steps)
@@ -164,9 +164,9 @@ def train():
             scheduler.step()
 
             if (epoch + 1) % 5 == 0:
-                mlflow_pytorch.log_model(model, f"model_e{epoch}")
+                save_mlflow_model(model, f"model_e{epoch}")
 
-    torch.save(model.state_dict(), model_path)
+    save_pytorch_model(model, model_path)
 
     x = np.arange(epochs) + 1
     fix, ((ax1, ax2)) = plt.subplots(1, 2)

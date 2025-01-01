@@ -5,11 +5,7 @@ from engine import EngineConfig
 from exact_engine import generate_pong_states
 from pong_paddle import RandomPaddleFactory, UserPaddleFactory
 from fuzzy_engine import generate_fuzzy_states
-
-print("Hello world!")
-
 import pygame
-import numpy as np
 
 # Initialize Pygame
 pygame.init()

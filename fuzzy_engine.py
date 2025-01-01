@@ -1,11 +1,30 @@
 from collections import deque
 
 import torch
+import requests
+import mlflow
+
 from engine import EngineConfig, Field
 from exact_engine import generate_pong_states
 from models import ModelConfiguration
-from runtime_configuration import Model, model_path, classification_threshold, temperature_variance
+from runtime_configuration import mlflow_model_path, model_path, classification_threshold, temperature_variance, mlflow_server_url
 import numpy as np
+from model_loaders import load_mlflow_model, load_pytorch_model
+
+# Consider creating a context manager to configure the server from which models are loaded and use the manager
+# within load_mlflow_model to avoid leaking mlflow details higher than where is needed
+mlflow.set_tracking_uri(mlflow_server_url)
+try:
+    response = requests.get(mlflow_server_url)
+    if response.status_code == 200:
+        mlflow.set_tracking_uri(mlflow_server_url)
+        print(f"MLflow Tracking URL set to: {mlflow_server_url}")
+    else:
+        print(f"MLflow server at {mlflow_server_url} is not available. Status code: {response.status_code}")
+        print("Will load models from local mlruns directory")
+except requests.exceptions.RequestException as e:
+    print(f"Failed to connect to MLflow server at {mlflow_server_url}. Error: {e}")
+    print("Will load models from local mlruns directory")
 
 config = ModelConfiguration()
 
@@ -30,8 +49,12 @@ def _generate_fuzzy_states(engine_config=EngineConfig()):
     right_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.right - paddle_width,
                                                               0 - paddle_height / 2, field)
 
-    model = Model().to(device=config.device)
-    model.load_state_dict(torch.load(model_path, weights_only=True, map_location=torch.device(config.device)))
+    # Either load model from mlflow run
+    # model = load_mlflow_model(mlflow_model_path)
+
+    # Or load the model from pth file containing weights
+    model = load_pytorch_model(model_path)
+
     model.eval()
     window_size = config.input_sequence_length
     window = deque(maxlen=window_size)
