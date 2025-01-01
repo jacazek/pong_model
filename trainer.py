@@ -91,8 +91,8 @@ def train():
             avg_mse = 0
             with tqdm(train_dataloader, unit=" batch", desc=f"Training (epoch {epoch + 1} of {epochs})") as loader:
                 model.train()
-
                 for idx, batch in enumerate(loader):
+                    current_idx = idx
                     batch_states, batch_next_states = batch
 
                     batch_states = torch.tensor(batch_states).float().to(device=config.device)
@@ -113,12 +113,12 @@ def train():
                     scaler.update()
 
                     total_loss += combined_loss.item()
-                    avg_loss = total_loss / (idx + 1)
+                    avg_loss = total_loss / (current_idx + 1)
 
                     mse = np.mean(
                         np.square(target_continuous_states.cpu().detach().numpy() - continuous_states.cpu().detach().numpy()))
                     total_mse += mse.item()
-                    avg_mse += total_mse / (idx + 1)
+                    avg_mse += total_mse / (current_idx + 1)
                     loader.set_postfix({"loss": avg_loss, "mse": avg_mse, "classification_loss": classification_loss.item(),
                                         "regression_loss": regression_loss.item(), "combined_loss": combined_loss.item()})
                 train_loss.append(avg_loss)
