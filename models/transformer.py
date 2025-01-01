@@ -7,9 +7,9 @@ from . import ModelConfiguration
 config = ModelConfiguration()
 
 
-class Transformermodel(BasePongModel):
+class TransformerModel(BasePongModel):
     def __init__(self):
-        super(Transformermodel, self).__init__()
+        super(TransformerModel, self).__init__()
         # Consider using decoder only with flash attention
         self.positional_encoding = nn.Parameter(torch.zeros(1, 100, config.hidden_size))
 
