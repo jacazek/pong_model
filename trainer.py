@@ -1,3 +1,4 @@
+import requests
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,12 +12,23 @@ import matplotlib.pyplot as plt
 import mlflow
 import mlflow.pytorch as mlflow_pytorch
 
-from model import PongDataset
-from model_configuration import device, discrete_output_size, output_size
-import model_configuration as model_configuration
+from models import PongDataset, ModelConfiguration
 from runtime_configuration import Model, model_path
 
-mlflow.set_tracking_uri("http://localhost:8080")
+config = ModelConfiguration()
+
+mlflow_server_url = "http://localhost:8080"
+try:
+    response = requests.get(mlflow_server_url)
+    if response.status_code == 200:
+        mlflow.set_tracking_uri(mlflow_server_url)
+        print(f"MLflow Tracking URL set to: {mlflow_server_url}")
+    else:
+        print(f"MLflow server at {mlflow_server_url} is not available. Status code: {response.status_code}")
+        print("Logging locally. To view results, run `python -m mlflow server --port 5000`")
+except requests.exceptions.RequestException as e:
+    print(f"Failed to connect to MLflow server at {mlflow_server_url}. Error: {e}")
+    print("Logging locally. To view results, run `python -m mlflow server --port 5000`")
 
 batch_size = 1000
 train_data_set_steps = 3200000
@@ -24,7 +36,7 @@ validate_dataset_steps = 10000
 num_workers = int(os.cpu_count() / 16)
 learning_rate = 0.001
 gamma = 0.95
-epochs = 100
+epochs = 5
 
 def train():
     train_dataset = PongDataset(generate_pong_states, train_data_set_steps)
@@ -33,7 +45,7 @@ def train():
     validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps)
     validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
-    model = Model().to(device=device)
+    model = Model().to(device=config.device)
     regression_loss_fn = nn.MSELoss()
     classification_loss_fn = nn.BCEWithLogitsLoss()
 
@@ -45,15 +57,15 @@ def train():
     #
     # ])RandomPaddleFactory
 
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.amp.GradScaler()
     scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
     train_loss = []
     train_mse = []
     validation_loss = []
     validation_mse = []
-    experiment = mlflow.get_experiment_by_name("Pong model")
+    experiment = mlflow.set_experiment("Pong model")
     with mlflow.start_run(experiment_id=experiment.experiment_id):
-        mlflow.log_params(model.parameters.__dict__ | {
+        mlflow.log_params(config.__dict__ | {
             # training hyper parameters
             "optimizer": type(optimizer).__name__,
             "optimizer_detailed": str(optimizer),
@@ -77,19 +89,18 @@ def train():
             avg_loss = 0
             total_mse = 0
             avg_mse = 0
-            count = 1
             with tqdm(train_dataloader, unit=" batch", desc=f"Training (epoch {epoch + 1} of {epochs})") as loader:
                 model.train()
 
                 for idx, batch in enumerate(loader):
                     batch_states, batch_next_states = batch
 
-                    batch_states = torch.tensor(batch_states).float().to(device=device)
-                    batch_next_states = torch.tensor(batch_next_states).float().to(device=device)
-                    target_continuous_states = batch_next_states[:, :output_size]
-                    target_discrete_states = batch_next_states[:, output_size:]
+                    batch_states = torch.tensor(batch_states).float().to(device=config.device)
+                    batch_next_states = torch.tensor(batch_next_states).float().to(device=config.device)
+                    target_continuous_states = batch_next_states[:, :config.output_size]
+                    target_discrete_states = batch_next_states[:, config.output_size:]
                     # Forward pass
-                    with torch.autocast(device_type=device, dtype=torch.float16):
+                    with torch.autocast(device_type=config.device, dtype=torch.float16):
                         continuous_states, discrete_states = model(batch_states)
                         classification_loss = classification_loss_fn(discrete_states, target_discrete_states)
                         regression_loss = regression_loss_fn(continuous_states, target_continuous_states)
@@ -126,10 +137,10 @@ def train():
                 model.eval()
                 for idx, batch in enumerate(loader):
                     batch_states, batch_next_states = batch
-                    batch_states = torch.tensor(batch_states).float().to(device=device)
-                    batch_next_states = torch.tensor(batch_next_states).float().to(device=device)
-                    target_continuous_states = batch_next_states[:, :output_size]
-                    target_discrete_states = batch_next_states[:, output_size:]
+                    batch_states = torch.tensor(batch_states).float().to(device=config.device)
+                    batch_next_states = torch.tensor(batch_next_states).float().to(device=config.device)
+                    target_continuous_states = batch_next_states[:, :config.output_size]
+                    target_discrete_states = batch_next_states[:, config.output_size:]
                     # Forward pass
                     continuous_states, discrete_states = model(batch_states)
                     classification_loss = classification_loss_fn(discrete_states, target_discrete_states)

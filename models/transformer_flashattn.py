@@ -1,10 +1,12 @@
 import torch
-import torch.nn as nn
+from torch import nn as nn
 import math
-from flash_attn.modules.mha import MHA
 
-from model import BasePongModel
-from model_configuration import hidden_size, number_heads, num_layers, input_sequence_length
+from flash_attn.modules.mha import MHA
+from .base_pong_model import BasePongModel
+from . import ModelConfiguration
+
+config = ModelConfiguration()
 
 
 class Transformer(nn.Module):
@@ -104,11 +106,12 @@ class FeedForwardNetwork(nn.Module):
         return self.fc2(self.dropout(torch.relu(self.fc1(x))))
 
 
-class AlternateTransformerModel(BasePongModel):
+class FlashAttentionTransformer(BasePongModel):
     def _forward(self, x: torch.Tensor):
         x = self.transformer(x)
         return x.mean(dim=1)
 
     def __init__(self):
-        super(AlternateTransformerModel, self).__init__()
-        self.transformer = Transformer(hidden_size, number_heads, num_layers, hidden_size, input_sequence_length, 0.2)
+        super(FlashAttentionTransformer, self).__init__()
+        self.transformer = Transformer(config.hidden_size, config.number_heads, config.num_layers, config.hidden_size, config.input_sequence_length, 0.2)
+
