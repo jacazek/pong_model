@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from torch.utils.data import IterableDataset
 
-from engine import EngineConfig
-from pong_paddle import RandomPaddleFactory
+from game.configuration import EngineConfig
+from game.paddle import RandomPaddleFactory
 from . import ModelConfiguration
 
 config = ModelConfiguration()

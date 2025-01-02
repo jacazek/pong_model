@@ -1,10 +1,13 @@
 from collections import deque
 
+import inject
 import torch
 import requests
 import mlflow
 
-from engine import EngineConfig, Field
+from game.field import Field
+from game.configuration import EngineConfig
+from game.state import State
 from exact_engine import generate_pong_states
 from models import ModelConfiguration
 from runtime_configuration import mlflow_model_path, model_path, classification_threshold, temperature_variance, mlflow_server_url
@@ -28,26 +31,26 @@ except requests.exceptions.RequestException as e:
 
 config = ModelConfiguration()
 
-def generate_fuzzy_states(engine_config=EngineConfig(), num_steps=None,):
-    state_generator = _generate_fuzzy_states(engine_config)
+def generate_fuzzy_states(num_steps=None):
+    state_generator = _generate_fuzzy_states()
     if num_steps is None:
         for state in state_generator:
             yield state
     else:
         for step in range(num_steps):
             yield next(state_generator)
-def _generate_fuzzy_states(engine_config=EngineConfig()):
+
+@inject.params(game_state=State)
+def _generate_fuzzy_states(game_state=State):
     dt = 1  # Time step
+    engine_config = game_state.engineConfig
+    field = game_state.field
 
-    paddle_width = engine_config.paddle_width_percent / engine_config.field_width * engine_config.field_width
-    paddle_height = engine_config.paddle_height_percent / engine_config.field_height * engine_config.field_height
+    paddle_width = engine_config.paddle_width_percent / field.width * field.width
+    paddle_height = engine_config.paddle_height_percent / field.height * field.height
     # Initialize ball position and velocity
-    field = Field(engine_config.field_width, engine_config.field_height)
-
-    left_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.left,
-                                                             0 - paddle_height / 2, field)
-    right_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.right - paddle_width,
-                                                              0 - paddle_height / 2, field)
+    left_paddle = game_state.left_paddle
+    right_paddle = game_state.right_paddle
 
     # Either load model from mlflow run
     # model = load_mlflow_model(mlflow_model_path)
@@ -77,6 +80,5 @@ def _generate_fuzzy_states(engine_config=EngineConfig()):
 
 
 if __name__ == "__main__":
-    engine_config = EngineConfig()
-    for state in generate_fuzzy_states(engine_config, 10):
+    for state in generate_fuzzy_states(10):
         print(state)

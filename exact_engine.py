@@ -1,8 +1,10 @@
-from engine import EngineConfig, random_velocity_generator, Field, Ball
+from engine import random_velocity_generator
+from game.state import State
+import inject
 
 
-def generate_pong_states(engine_config=EngineConfig(), num_steps=None):
-    state_generator = _generate_pong_states(engine_config)
+def generate_pong_states(num_steps=None):
+    state_generator = _generate_pong_states()
     if num_steps is None:
         for state in state_generator:
             yield state
@@ -11,29 +13,20 @@ def generate_pong_states(engine_config=EngineConfig(), num_steps=None):
             yield next(state_generator)
 
 
-def _generate_pong_states(engine_config=EngineConfig()):
-    # states = []  # To store ball position, velocity, and paddle positions
-
+@inject.params(game_state=State)
+def _generate_pong_states(game_state: State = None):
     dt = 1  # Time step
     ball_random_velocity = random_velocity_generator()
-
-    paddle_width = engine_config.paddle_width_percent /engine_config.field_width * engine_config.field_width
-    paddle_height = engine_config.paddle_height_percent / engine_config.field_height * engine_config.field_height
     # print(f"{paddle_width}, {paddle_height}")
     # Initialize ball position and velocity
-    field = Field(engine_config.field_width, engine_config.field_height)
+    left_paddle = game_state.left_paddle
+    right_paddle = game_state.right_paddle
+    ball = game_state.ball
+    field = game_state.field
 
-    # convert to using factory?
-    left_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.left, 0 - paddle_height/2, field)
-    right_paddle = engine_config.paddle_factory.create_paddle(paddle_width, paddle_height, field.right - paddle_width,
-                                                              0 - paddle_height/2, field)
-    ball = engine_config.ball or Ball()
     x, y = next(ball_random_velocity)
     ball.reset(0, 0, x, y)
-    ball.left_paddle = left_paddle
-    ball.right_paddle = right_paddle
-    ball.field = field
-    ball.radius = engine_config.ball_radius_percent * engine_config.field_height
+    ball.radius = game_state.engineConfig.ball_radius_percent * field.height
 
     ball_data = [ball.x, ball.y, ball.xv, ball.yv]
     paddle_data = left_paddle.vectorize_state() + right_paddle.vectorize_state()
@@ -49,7 +42,7 @@ def _generate_pong_states(engine_config=EngineConfig()):
         # Update ball position
         left_paddle.update(dt)
         right_paddle.update(dt)
-        collisions = ball.update(dt)
+        collisions = ball.update(dt, game_state)
 
         # Reset if ball goes out of bounds (optional)
         if ball.x + ball.radius < field.left and not collisions[0]:
