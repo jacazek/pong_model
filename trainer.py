@@ -11,9 +11,15 @@ import os
 import matplotlib.pyplot as plt
 import mlflow
 from model_loaders import save_mlflow_model, save_pytorch_model
+import inject
 
 from models import PongDataset, ModelConfiguration
 from runtime_configuration import Model, model_path
+from game.field import Field
+from game.paddle import RandomPaddleFactory, PaddleFactory
+from game.configuration import EngineConfig
+from game.state import State
+from game.ball import Ball
 
 config = ModelConfiguration()
 
@@ -36,13 +42,13 @@ validate_dataset_steps = 10000
 num_workers = int(os.cpu_count() / 16)
 learning_rate = 0.001
 gamma = 0.95
-epochs = 100
+epochs = 5
 
 def train():
-    train_dataset = PongDataset(generate_pong_states, train_data_set_steps)
+    train_dataset = PongDataset(train_data_set_steps)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
                                   pin_memory=True)
-    validate_dataset = PongDataset(generate_pong_states, validate_dataset_steps)
+    validate_dataset = PongDataset(validate_dataset_steps)
     validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
 
     model = Model().to(device=config.device)
@@ -179,7 +185,22 @@ def train():
     plt.savefig(f"{os.path.basename(model_path)}.train_results.png")
     plt.show()
 
+def configure_main(binder: inject.Binder):
+    binder.bind(Field, Field(1.0, 1.0))
+    binder.bind(EngineConfig, EngineConfig())
+    binder.bind(PaddleFactory, RandomPaddleFactory(max_velocity=0.009))
+
+    # defer constructions for objects with more complex dependencies
+    # what are needed during initialization
+    # will create singleton instance upon retrieval of the object bound to the key
+    # necessary as trying to access instances during bind configuration will crash with injector not configured error
+    binder.bind_to_constructor("left_paddle", lambda: inject.get_injector().get_instance(PaddleFactory).create_left_paddle())
+    binder.bind_to_constructor("right_paddle", lambda: inject.get_injector().get_instance(PaddleFactory).create_right_paddle())
+    binder.bind_to_constructor(Ball, Ball)
+    binder.bind_to_constructor(State, State)
+    binder.bind("generator", generate_pong_states)
 
 if __name__ == "__main__":
+    inject.configure(configure_main)
     train()
 

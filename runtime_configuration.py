@@ -4,7 +4,7 @@ from models import FlashAttentionTransformer
 mlflow_server_url = "http://localhost:8080"
 
 # model to use during training and inference
-Model = FlashAttentionTransformer
+Model = RNNModel
 
 # path to mlflow model
 mlflow_model_path = f"runs:/732539a5e0f049559d6dba2d02e7577a/model_e69"
