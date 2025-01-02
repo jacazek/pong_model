@@ -74,9 +74,8 @@ class PaddleFactory(ABC):
     engine_config = inject.attr(EngineConfig)
     field = inject.attr(Field)
 
-    def __init__(self):
-        self.paddle_width = self.engine_config.paddle_width_percent / self.field.width * self.field.width
-        self.paddle_height = self.engine_config.paddle_height_percent / self.field.height * self.field.height
+    def get_paddle_dimensions(self):
+        return self.engine_config.paddle_width_percent / self.field.width * self.field.width, self.engine_config.paddle_height_percent / self.field.height * self.field.height
 
     @abstractmethod
     def create_left_paddle(self):
@@ -92,19 +91,23 @@ class UserPaddleFactory(PaddleFactory):
         super().__init__()
 
     def create_left_paddle(self):
-        return UserPaddle(self.paddle_width, self.paddle_height, self.field.left, 0 - self.paddle_height / 2, 0, pygame.K_q, pygame.K_a)
+        width, height = self.get_paddle_dimensions()
+        return UserPaddle(width, height, self.field.left, 0 - height / 2, 0, pygame.K_q, pygame.K_a)
 
     def create_right_paddle(self):
-        return UserPaddle(self.paddle_width, self.paddle_height, self.field.right - self.paddle_width,
-                                                                  0 - self.paddle_height / 2, 0, pygame.K_UP, pygame.K_DOWN)
+        width, height = self.get_paddle_dimensions()
+        return UserPaddle(width, height, self.field.right - width,
+                                                                  0 - height / 2, 0, pygame.K_UP, pygame.K_DOWN)
 
 class RandomPaddleFactory(PaddleFactory):
     def create_left_paddle(self):
-        return RandomPaddle(self.paddle_width, self.paddle_height, self.field.left, 0 - self.paddle_height / 2, min_velocity=self.min_velocity, max_velocity=self.max_velocity)
+        width, height = self.get_paddle_dimensions()
+        return RandomPaddle(width, height, self.field.left, 0 - height / 2, min_velocity=self.min_velocity, max_velocity=self.max_velocity)
 
     def create_right_paddle(self):
-        return RandomPaddle(self.paddle_width, self.paddle_height, self.field.right - self.paddle_width,
-                                                                  0 - self.paddle_height / 2, min_velocity=self.min_velocity, max_velocity=self.max_velocity)
+        width, height = self.get_paddle_dimensions()
+        return RandomPaddle(width, height, self.field.right - width,
+                                                                  0 - height / 2, min_velocity=self.min_velocity, max_velocity=self.max_velocity)
 
     def __init__(self, min_velocity=0.025, max_velocity=0.1):
         super().__init__()

@@ -17,8 +17,7 @@ def generate_pong_states(num_steps=None):
 def _generate_pong_states(game_state: State = None):
     dt = 1  # Time step
     ball_random_velocity = random_velocity_generator()
-    # print(f"{paddle_width}, {paddle_height}")
-    # Initialize ball position and velocity
+
     left_paddle = game_state.left_paddle
     right_paddle = game_state.right_paddle
     ball = game_state.ball
@@ -26,7 +25,6 @@ def _generate_pong_states(game_state: State = None):
 
     x, y = next(ball_random_velocity)
     ball.reset(0, 0, x, y)
-    ball.radius = game_state.engineConfig.ball_radius_percent * field.height
 
     ball_data = [ball.x, ball.y, ball.xv, ball.yv]
     paddle_data = left_paddle.vectorize_state() + right_paddle.vectorize_state()
@@ -42,7 +40,7 @@ def _generate_pong_states(game_state: State = None):
         # Update ball position
         left_paddle.update(dt)
         right_paddle.update(dt)
-        collisions = ball.update(dt, game_state)
+        collisions = ball.update(dt)
 
         # Reset if ball goes out of bounds (optional)
         if ball.x + ball.radius < field.left and not collisions[0]:

@@ -43,11 +43,7 @@ def generate_fuzzy_states(num_steps=None):
 @inject.params(game_state=State)
 def _generate_fuzzy_states(game_state=State):
     dt = 1  # Time step
-    engine_config = game_state.engineConfig
-    field = game_state.field
 
-    paddle_width = engine_config.paddle_width_percent / field.width * field.width
-    paddle_height = engine_config.paddle_height_percent / field.height * field.height
     # Initialize ball position and velocity
     left_paddle = game_state.left_paddle
     right_paddle = game_state.right_paddle

@@ -4,23 +4,12 @@ Given a balls initial position, direction and
 from game.configuration import EngineConfig
 from game.field import Field
 from exact_engine import generate_pong_states
-from game.paddle import UserPaddleFactory, RandomPaddleFactory, PaddleFactory, Paddle
+from game.paddle import UserPaddleFactory, RandomPaddleFactory, PaddleFactory
 from game.state import State
 from game.ball import Ball
 from fuzzy_engine import generate_fuzzy_states
 import pygame
 import inject
-
-
-def configure_main(binder: inject.Binder):
-    binder.bind(Field, Field(1.0, 1.0))
-    binder.bind(EngineConfig, EngineConfig())
-    binder.bind_to_constructor(PaddleFactory, UserPaddleFactory)
-    binder.bind(Ball, Ball())
-    binder.bind_to_constructor(State, State)
-    binder.bind("generator", generate_pong_states)
-
-
 
 # Initialize Pygame
 pygame.init()
@@ -52,9 +41,6 @@ def scale_to_screen(point, field: Field = None):
     x = (x + field.width / 2.0) / field.width
     y = (y + field.height / 2.0) / field.height
     return int(x * screen_width), int(y * screen_height)
-
-
-
 
 score_1 = 0
 score_2 = 0
@@ -148,6 +134,25 @@ def main(generator):
 
     # Quit Pygame
     pygame.quit()
+
+def configure_main(binder: inject.Binder):
+    # immediatly construct and bind an instance to the given key
+    binder.bind(Field, Field(1.0, 1.0))
+    binder.bind(EngineConfig, EngineConfig())
+    binder.bind(PaddleFactory, UserPaddleFactory())
+
+    # defer constructions for objects with more complex dependencies
+    # what are needed during initialization
+    # will create singleton instance upon retrieval of the object bound to the key
+    # necessary as trying to access instances during bind configuration will crash with injector not configured error
+    binder.bind("left_paddle", lambda: inject.instance(PaddleFactory).create_left_paddle())
+    binder.bind_to_constructor("right_paddle", lambda: inject.instance(PaddleFactory).create_right_paddle())
+    binder.bind_to_constructor(Ball, Ball)
+    binder.bind_to_constructor(State, State)
+
+    # Choose the kind of generator desired
+    binder.bind("generator", generate_pong_states)
+    # binder.bind("generator", generate_fuzzy_states)
 
 if __name__ == "__main__":
     inject.configure(configure_main)

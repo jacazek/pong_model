@@ -7,17 +7,14 @@ from torch.utils.data import IterableDataset
 from game.configuration import EngineConfig
 from game.paddle import RandomPaddleFactory
 from . import ModelConfiguration
+import inject
 
 config = ModelConfiguration()
 
 
 class PongDataset(IterableDataset):
-    def __init__(self, state_generator, count):
-
-        self.engine_config = EngineConfig()
-        # increase max velocity of paddle to even out misses vs hits
-        self.engine_config.set_paddle_factory(RandomPaddleFactory(max_velocity=0.009))
-        self.generator = state_generator
+    generator = inject.attr("generator")
+    def __init__(self, count):
         self.count = count
 
     def prepare_worker(self):
@@ -35,8 +32,7 @@ class PongDataset(IterableDataset):
         self.prepare_worker()
         window_size = config.input_sequence_length + 1
         window = deque(maxlen=window_size)
-        for ball_data, paddle_data, collision_data, score_data in self.generator(engine_config=self.engine_config,
-                                                                                 num_steps=self.count):
+        for ball_data, paddle_data, collision_data, score_data in self.generator(num_steps=self.count):
             window.append(ball_data + paddle_data + collision_data + score_data)
             if len(window) == window_size:
                 # print(list(window))
@@ -49,12 +45,11 @@ class PongDataset(IterableDataset):
     #     Memory heavy loader, compute light
     #     """
     #     self.prepare_worker()
-    #     states = list(self.generator(self.count,
-    #                                  engine_config=self.engine_config))
+    #     states = list(self.generator(num_steps=self.count))
     #
-    #     states = [(np.array([sum(item, []) for item in states[window_start:window_start + input_sequence_length]]),
+    #     states = [(np.array([sum(item, []) for item in states[window_start:window_start + config.input_sequence_length]]),
     #                np.array(ball_data + collision_data + score_data)) for
-    #               window_start, (ball_data, paddle_data, collision_data, score_data) in enumerate(states[input_sequence_length:])]
+    #               window_start, (ball_data, paddle_data, collision_data, score_data) in enumerate(states[config.input_sequence_length:])]
     #     for state in states:
     #         yield state
 
