@@ -53,7 +53,7 @@ then run the main script
 - [ ] parameterize the model variant via CLI (and other runtime args)
 - [x] Include bounding box collisions in the input data  
 - [x] separate paddle control and scoring from ball engine
-- [ ] enable user control of paddles
+- [x] enable user control of paddles
 - [x] introduce variability in generator to paddle movements  
 - [ ] limit ball vector to certain degrees  
 - [ ] provide extreme negative feedback the further ball goes out of bounds during training  
@@ -67,5 +67,8 @@ then run the main script
 - [ ] introduce variability configuration setting for models to produce more unpredictable output
 - [ ] Let the model control scaling factor of the game for extra glitchy experience
 - [ ] Consider how to make the model control arbitrary number of balls...
-- [ ] Create common loop for fuzzy and exact engines (mainly paddle control)
+  - multiple model instances?
+  - Another model to determine how many instances should be provided?
+- [x] Create common loop for fuzzy and exact engines (mainly paddle control)
+  - Not a common loop, but setup of paddles has been encapsulated by factories
 - [ ] Train the model on resetting the game when best of X reached

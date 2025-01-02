@@ -5,10 +5,7 @@ import torch
 import requests
 import mlflow
 
-from game.field import Field
-from game.configuration import EngineConfig
 from game.state import State
-from exact_engine import generate_pong_states
 from models import ModelConfiguration
 from runtime_configuration import mlflow_model_path, model_path, classification_threshold, temperature_variance, mlflow_server_url
 import numpy as np
@@ -44,10 +41,6 @@ def generate_fuzzy_states(num_steps=None):
 def _generate_fuzzy_states(game_state=State):
     dt = 1  # Time step
 
-    # Initialize ball position and velocity
-    left_paddle = game_state.left_paddle
-    right_paddle = game_state.right_paddle
-
     # Either load model from mlflow run
     # model = load_mlflow_model(mlflow_model_path)
 
@@ -59,9 +52,9 @@ def _generate_fuzzy_states(game_state=State):
     window = deque(maxlen=window_size)
     window.extend(np.zeros((config.input_sequence_length, config.input_size), dtype=float))
     while True:
-        left_paddle.update(dt)
-        right_paddle.update(dt)
-        paddle_data = left_paddle.vectorize_state() + right_paddle.vectorize_state()
+        game_state.left_paddle.update(dt)
+        game_state.right_paddle.update(dt)
+        paddle_data = game_state.left_paddle.vectorize_state() + game_state.right_paddle.vectorize_state()
         temperature = torch.from_numpy(
             np.random.uniform(1.0 - temperature_variance, 1.0 + temperature_variance, config.discrete_output_size)).to(
             device=config.device)

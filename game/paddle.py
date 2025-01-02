@@ -58,8 +58,6 @@ class RandomPaddle(Paddle):
 
     def random_paddle_velocity(self):
         return self.random_ng.uniform(-1*self.max_velocity, self.max_velocity)
-        # return np.random.choice([np.random.uniform(self.min_velocity, self.max_velocity),
-        #                          np.random.uniform(self.max_velocity * -1, self.min_velocity * -1)])
 
     def update(self, dt):
         self.count += 1

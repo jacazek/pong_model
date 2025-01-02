@@ -31,7 +31,6 @@ class Ball:
         top_field_collision = 0
         bottom_field_collision = 0
 
-        # move to state manager
         if self.y - self.radius <= self.field.top:
             self.yv *= -1
             top_field_collision = 1

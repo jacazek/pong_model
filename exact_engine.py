@@ -1,6 +1,17 @@
-from engine import random_velocity_generator
 from game.state import State
 import inject
+import numpy as np
+
+def random_velocity_generator(min=0.005, max=0.025):
+    # count = 0
+    random_ng = np.random.default_rng()
+    while True:
+        x = random_ng.uniform(max*-1, min*-1) if random_ng.choice([True, False]) else random_ng.uniform(min, max)
+        y = random_ng.uniform(max*-1, max)
+        # random_x = np.random.uniform(min, max)
+        # random_y = random_velocity(min=min, max=max)
+        # count += 1
+        yield x, y
 
 
 def generate_pong_states(num_steps=None):
@@ -33,11 +44,9 @@ def _generate_pong_states(game_state: State = None):
 
     # Save the current state
     yield ball_data, paddle_data, collision_data, score_data
-    # yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, 0, 0, blocked_1, blocked_2]
 
     while True:
         score_data = [0, 0]
-        # Update ball position
         left_paddle.update(dt)
         right_paddle.update(dt)
         collisions = ball.update(dt)
@@ -53,14 +62,9 @@ def _generate_pong_states(game_state: State = None):
             x, y = next(ball_random_velocity)
             ball.reset(0, 0, x, y)
 
-        # Update paddle positions (static or random movement for simulation)
-        # Here, paddles are static, but you can add logic for movement.
-        # Update paddle position
-
         # Save the current state
         ball_data = [ball.x, ball.y, ball.xv, ball.yv]
         paddle_data = [left_paddle.x, left_paddle.y, left_paddle.yv, right_paddle.x, right_paddle.y, right_paddle.yv]
         collision_data = collisions  # with what did the ball collide?
         yield ball_data, paddle_data, collision_data, score_data
-        # yield [ball.x, ball.y, ball.xv, ball.yv, left_paddle.y, right_paddle.y, score_1, score_2, collisions[0],
-        #        collisions[1], blocked_1, blocked_2]
+

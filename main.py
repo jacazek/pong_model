@@ -54,6 +54,17 @@ def update_scores(state, scores: Score = None):
     ball_data, paddle_data, collision_data, score_data = state
     scores.update(*(score_data+collision_data[:2]))
 
+@inject.params(scores=Score)
+def render_scores(scores: Score = None):
+    score1_surface = font.render(f"{scores.left_score} | {scores.left_blocked}", True, text_color)
+    score2_surface = font.render(f"{scores.right_score} | {scores.right_blocked}", True, text_color)
+
+    screen.blit(score1_surface, (screen_quarter - score1_surface.get_width()/2, 10))
+    screen.blit(score2_surface, (screen_width - screen_quarter - score2_surface.get_width()/2, 10))
+
+def render_field():
+    pygame.draw.line(screen, text_color, (screen_width/2, 0), (screen_width/2, screen_height), 1)
+
 # Function to render the state
 @inject.params(engine_config=EngineConfig, field=Field)
 def render_state(state, count, engine_config: EngineConfig = None, field: Field = None):
@@ -85,17 +96,6 @@ def render_state(state, count, engine_config: EngineConfig = None, field: Field 
 
     # Update the display
     pygame.display.flip()
-
-@inject.params(scores=Score)
-def render_scores(scores: Score = None):
-    score1_surface = font.render(f"{scores.left_score} | {scores.left_blocked}", True, text_color)
-    score2_surface = font.render(f"{scores.right_score} | {scores.right_blocked}", True, text_color)
-
-    screen.blit(score1_surface, (screen_quarter - score1_surface.get_width()/2, 10))
-    screen.blit(score2_surface, (screen_width - screen_quarter - score2_surface.get_width()/2, 10))
-
-def render_field():
-    pygame.draw.line(screen, text_color, (screen_width/2, 0), (screen_width/2, screen_height), 1)
 
 
 # Main loop to render the state
@@ -148,8 +148,8 @@ def configure_main(binder: inject.Binder):
 
 
     # Choose the kind of generator desired
-    binder.bind("generator", generate_pong_states)
-    # binder.bind("generator", generate_fuzzy_states)
+    # binder.bind("generator", generate_pong_states)
+    binder.bind("generator", generate_fuzzy_states)
 
 if __name__ == "__main__":
     inject.configure(configure_main)
