@@ -5,6 +5,7 @@ from game.configuration import EngineConfig
 from game.field import Field
 from exact_engine import generate_pong_states
 from game.paddle import UserPaddleFactory, RandomPaddleFactory, PaddleFactory
+from game.score import Score
 from game.state import State
 from game.ball import Ball
 from fuzzy_engine import generate_fuzzy_states
@@ -42,23 +43,16 @@ def scale_to_screen(point, field: Field = None):
     y = (y + field.height / 2.0) / field.height
     return int(x * screen_width), int(y * screen_height)
 
-score_1 = 0
-score_2 = 0
-blocked_1 = 0
-blocked_2 = 0
 
 font_size = 24
 font = pygame.font.Font(None, font_size) # None = default font
 small_font = pygame.font.Font(None, 18)
 text_color = (255, 255, 255)  # White
 
-def update_scores(state):
-    global blocked_1, blocked_2, score_1, score_2
+@inject.params(scores=Score)
+def update_scores(state, scores: Score = None):
     ball_data, paddle_data, collision_data, score_data = state
-    blocked_1 += collision_data[0]
-    blocked_2 += collision_data[1]
-    score_1 += score_data[0]
-    score_2 += score_data[1]
+    scores.update(*(score_data+collision_data[:2]))
 
 # Function to render the state
 @inject.params(engine_config=EngineConfig, field=Field)
@@ -82,7 +76,7 @@ def render_state(state, count, engine_config: EngineConfig = None, field: Field 
     pygame.draw.rect(screen, paddle_color_collision if collision_1 else paddle_color, scale_to_screen((paddle1_x, paddle1_y)) + (paddle_width, paddle_height))  # Left paddle
     pygame.draw.rect(screen, paddle_color_collision if collision_2 else paddle_color, scale_to_screen((paddle2_x, paddle2_y)) + (paddle_width, paddle_height))  # Right paddle
 
-    render_scores(score_1, score_2, blocked_1, blocked_2)
+    render_scores()
 
     render_field()
 
@@ -92,10 +86,10 @@ def render_state(state, count, engine_config: EngineConfig = None, field: Field 
     # Update the display
     pygame.display.flip()
 
-
-def render_scores(score1, score2, blocked1, blocked2):
-    score1_surface = font.render(f"{score1} | {blocked1}", True, text_color)
-    score2_surface = font.render(f"{score2} | {blocked2}", True, text_color)
+@inject.params(scores=Score)
+def render_scores(scores: Score = None):
+    score1_surface = font.render(f"{scores.left_score} | {scores.left_blocked}", True, text_color)
+    score2_surface = font.render(f"{scores.right_score} | {scores.right_blocked}", True, text_color)
 
     screen.blit(score1_surface, (screen_quarter - score1_surface.get_width()/2, 10))
     screen.blit(score2_surface, (screen_width - screen_quarter - score2_surface.get_width()/2, 10))
@@ -124,6 +118,7 @@ def main(generator):
                 screen_width = event.w
                 screen_height = event.h
 
+
         update_scores(state)
 
         # Render the state
@@ -140,15 +135,17 @@ def configure_main(binder: inject.Binder):
     binder.bind(Field, Field(1.0, 1.0))
     binder.bind(EngineConfig, EngineConfig())
     binder.bind(PaddleFactory, UserPaddleFactory())
+    binder.bind(Score, Score())
 
     # defer constructions for objects with more complex dependencies
     # what are needed during initialization
     # will create singleton instance upon retrieval of the object bound to the key
     # necessary as trying to access instances during bind configuration will crash with injector not configured error
-    binder.bind("left_paddle", lambda: inject.instance(PaddleFactory).create_left_paddle())
+    binder.bind_to_constructor("left_paddle", lambda: inject.instance(PaddleFactory).create_left_paddle())
     binder.bind_to_constructor("right_paddle", lambda: inject.instance(PaddleFactory).create_right_paddle())
     binder.bind_to_constructor(Ball, Ball)
     binder.bind_to_constructor(State, State)
+
 
     # Choose the kind of generator desired
     binder.bind("generator", generate_pong_states)
