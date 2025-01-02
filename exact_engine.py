@@ -64,7 +64,7 @@ def _generate_pong_states(game_state: State = None):
 
         # Save the current state
         ball_data = [ball.x, ball.y, ball.xv, ball.yv]
-        paddle_data = [left_paddle.x, left_paddle.y, left_paddle.yv, right_paddle.x, right_paddle.y, right_paddle.yv]
+        paddle_data =  left_paddle.vectorize_state() + right_paddle.vectorize_state()
         collision_data = collisions  # with what did the ball collide?
         yield ball_data, paddle_data, collision_data, score_data
 
