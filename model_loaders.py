@@ -14,7 +14,7 @@ def save_pytorch_model(model, path):
 
 
 def load_mlflow_model(path):
-    model = mlflow.pytorch.load_model(path).to(device=config.device)
+    model = mlflow.pytorch.load_model(path, map_location=torch.device(config.device))
     return model
 
 def load_pytorch_model(path):

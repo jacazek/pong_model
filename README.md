@@ -45,7 +45,7 @@ Update main.py to use the desired generator
 ![alt text](docs/image.png "Image")  
 
 then run the main script  
-`python main.py`
+`OMP_NUM_THREADS=2 python main.py`
 
 ## Todo
 - [ ] Capture metrics for model performance during training  
