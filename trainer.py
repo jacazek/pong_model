@@ -39,7 +39,7 @@ except requests.exceptions.RequestException as e:
 batch_size = 1000
 train_data_set_steps = 3200000
 validate_dataset_steps = 10000
-num_workers = int(os.cpu_count() / 16)
+num_workers = int(os.cpu_count() / 8)
 learning_rate = 0.001
 gamma = 0.95
 epochs = 5
@@ -101,8 +101,8 @@ def train():
                     current_idx = idx
                     batch_states, batch_next_states = batch
 
-                    batch_states = torch.tensor(batch_states).float().to(device=config.device)
-                    batch_next_states = torch.tensor(batch_next_states).float().to(device=config.device)
+                    batch_states = torch.tensor(batch_states, device=config.device, dtype=torch.float)
+                    batch_next_states = torch.tensor(batch_next_states, device=config.device, dtype=torch.float)
                     target_continuous_states = batch_next_states[:, :config.output_size]
                     target_discrete_states = batch_next_states[:, config.output_size:]
                     # Forward pass
@@ -113,7 +113,7 @@ def train():
                         combined_loss = classification_loss + regression_loss
 
                     # Backward pass
-                    optimizer.zero_grad()
+                    optimizer.zero_grad(set_to_none=True)
                     scaler.scale(combined_loss).backward()
                     scaler.step(optimizer)
                     scaler.update()
@@ -143,8 +143,8 @@ def train():
                 model.eval()
                 for idx, batch in enumerate(loader):
                     batch_states, batch_next_states = batch
-                    batch_states = torch.tensor(batch_states).float().to(device=config.device)
-                    batch_next_states = torch.tensor(batch_next_states).float().to(device=config.device)
+                    batch_states = torch.tensor(batch_states, device=config.device, dtype=torch.float)
+                    batch_next_states = torch.tensor(batch_next_states, device=config.device, dtype=torch.float)
                     target_continuous_states = batch_next_states[:, :config.output_size]
                     target_discrete_states = batch_next_states[:, config.output_size:]
                     # Forward pass

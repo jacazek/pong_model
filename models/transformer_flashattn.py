@@ -3,6 +3,7 @@ from torch import nn as nn
 import math
 
 from flash_attn.modules.mha import MHA
+from flash_attn import flash_attn_func
 from .base_pong_model import BasePongModel
 from . import ModelConfiguration
 
@@ -46,7 +47,8 @@ class Transformer(nn.Module):
 class TransformerLayer(nn.Module):
     def __init__(self, embed_dim, num_heads, ff_dim, dropout=0.1):
         super(TransformerLayer, self).__init__()
-        self.mha = MHA(embed_dim, num_heads, causal=False)
+        self.mha = MHA(embed_dim, num_heads, causal=True, use_flash_attn=True, return_residual=False)
+        # self.mha = MultiHeadAttention(embed_dim, num_heads)
         self.ffn = FeedForwardNetwork(embed_dim, ff_dim, dropout)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
@@ -63,37 +65,36 @@ class TransformerLayer(nn.Module):
         return x
 
 
-# class MultiHeadAttention(nn.Module):
-#     def __init__(self, embed_dim, num_heads):
-#         super(MultiHeadAttention, self).__init__()
-#         self.mha = MHA(embed_dim, num_heads)
-#         self.mha.fo
-#         assert embed_dim % num_heads == 0
-#         self.head_dim = embed_dim // num_heads
-#         self.num_heads = num_heads
-#
-#         self.query = nn.Linear(embed_dim, embed_dim)
-#         self.key = nn.Linear(embed_dim, embed_dim)
-#         self.value = nn.Linear(embed_dim, embed_dim)
-#         self.fc_out = nn.Linear(embed_dim, embed_dim)
-#
-#     def forward(self, q, k, v, mask=None):
-#         batch_size = q.size(0)
-#         q = self.query(q).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-#         k = self.key(k).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-#         v = self.value(v).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-#
-#         # Scaled dot-product attention
-#         # scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
-#         # if mask is not None:
-#         #     scores = scores.masked_fill(mask == 0, float('-inf'))
-#         # attn_weights = torch.softmax(scores, dim=-1)
-#         # attn_output = torch.matmul(attn_weights, v)
-#         attn_output = self.mha(q, k, v, mask)
-#
-#         # Concatenate heads
-#         attn_output = attn_output.transpose(1, 2).contiguous().view(batch_size, -1, self.num_heads * self.head_dim)
-#         return self.fc_out(attn_output)
+class MultiHeadAttention(nn.Module):
+    def __init__(self, embed_dim, num_heads):
+        super(MultiHeadAttention, self).__init__()
+        assert embed_dim % num_heads == 0
+        self.head_dim = embed_dim // num_heads
+        self.num_heads = num_heads
+
+        self.query = nn.Linear(embed_dim, embed_dim)
+        self.key = nn.Linear(embed_dim, embed_dim)
+        self.value = nn.Linear(embed_dim, embed_dim)
+        self.fc_out = nn.Linear(embed_dim, embed_dim)
+
+    def forward(self, x, mask=None):
+        batch_size = x.size(0)
+        q = self.query(x).view(batch_size, -1, self.num_heads, self.head_dim)
+        k = self.key(x).view(batch_size, -1, self.num_heads, self.head_dim)
+        v = self.value(x).view(batch_size, -1, self.num_heads, self.head_dim)
+
+        # Scaled dot-product attention
+        # scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        # if mask is not None:
+        #     scores = scores.masked_fill(mask == 0, float('-inf'))
+        # attn_weights = torch.softmax(scores, dim=-1)
+        # attn_output = torch.matmul(attn_weights, v)
+        attn_output = flash_attn_func(q, k, v, causal=False, return_attn_probs=False)
+        # attn_output = self.mha(q, k, v, mask)
+
+        # Concatenate heads
+        attn_output = attn_output.view(batch_size, -1, self.num_heads * self.head_dim)
+        return self.fc_out(attn_output)
 
 class FeedForwardNetwork(nn.Module):
     def __init__(self, embed_dim, ff_dim, dropout=0.1):
