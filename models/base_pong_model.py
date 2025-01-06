@@ -8,6 +8,7 @@ from models import ModelConfiguration
 
 
 class BasePongModel(nn.Module, ABC):
+    @inject.params(config=ModelConfiguration)
     def __init__(self, config: ModelConfiguration):
         super(BasePongModel, self).__init__()
         self.config = config

@@ -110,7 +110,7 @@ class FlashAttentionTransformer(BasePongModel):
         x = self.transformer(x)
         return x.mean(dim=1)
 
-    def __init__(self, model_config):
-        super(FlashAttentionTransformer, self).__init__(model_config)
+    def __init__(self):
+        super(FlashAttentionTransformer, self).__init__()
         self.transformer = Transformer(self.config.hidden_size, self.config.number_heads, self.config.num_layers, self.config.hidden_size, self.config.input_sequence_length, 0.2)
 

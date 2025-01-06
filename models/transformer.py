@@ -5,10 +5,10 @@ from .base_pong_model import BasePongModel
 from . import ModelConfiguration
 
 class TransformerModel(BasePongModel):
-    def __init__(self, model_config: ModelConfiguration):
-        super(TransformerModel, self).__init__(model_config)
+    def __init__(self):
+        super(TransformerModel, self).__init__()
         # Consider using decoder only with flash attention
-        self.positional_encoding = nn.Parameter(torch.zeros(1, 100, model_config.hidden_size))
+        self.positional_encoding = nn.Parameter(torch.zeros(1, 100, self.config.hidden_size))
 
         # self.transformer = nn.TransformerEncoder(
         self.transformer_list = nn.ModuleList([nn.TransformerEncoderLayer(

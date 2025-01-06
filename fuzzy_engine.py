@@ -7,13 +7,12 @@ import mlflow
 
 from game.state import State
 from main_arguments import MainArguments
-from models import ModelConfiguration
-from runtime_configuration import mlflow_model_path, classification_threshold, temperature_variance, mlflow_server_url
+from runtime_configuration import classification_threshold, temperature_variance, mlflow_server_url
 import numpy as np
-from model_loaders import load_mlflow_model, load_pytorch_model
+from model_loaders import load_model
 
 # Consider creating a context manager to configure the server from which models are loaded and use the manager
-# within load_mlflow_model to avoid leaking mlflow details higher than where is needed
+# within load_model to avoid leaking mlflow details higher than where is needed
 mlflow.set_tracking_uri(mlflow_server_url)
 try:
     response = requests.get(mlflow_server_url)
@@ -41,11 +40,8 @@ def generate_fuzzy_states(num_steps=None):
 @inject.params(game_state=State, main_arguments=MainArguments)
 def _generate_fuzzy_states(game_state=State, main_arguments=MainArguments):
     dt = 1  # Time step
-    # Either load model from mlflow run
-    # model = load_mlflow_model(mlflow_model_path)
 
-    # Or load the model from pth file containing weights
-    model = load_pytorch_model(f"{main_arguments.model_type}_weights.pth")
+    model = load_model(main_arguments.model_path)
 
 
     model.eval()

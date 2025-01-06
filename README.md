@@ -36,21 +36,38 @@ If no GPU, be sure to set `device` to `cpu`
 Run the training script to generate a model  
 `python trainer.py`
 
+By default, RNNModel is trained. Provide the `--model_type` CLI arg to train a different model type.
+
+Run `python trainer.py -h` to see all options for training.
+
+Some model types such as TransformerModel use multiple processes while training.  
+To prevent consuming all CPU, you can specify OMP_NUM_THREADS=4 to limit the number of threads.
+
 ## Test the model
 Run the main script with desired generator
-1. engine - generates states computed mathematically
-2. fuzzy_engine - generates states using model trained on states generated from engine
+1. exact - generates states computed mathematically
+2. fuzzy - generates states using model trained on states generated from engine
 
-Update main.py to use the desired generator  
-![alt text](docs/image.png "Image")  
+e.g.  
+`python main.py --generator_type exact`
 
-then run the main script  
+Run `python main.py -h` to see all options for running main script.
+
+Some model types such as TransformerModel use multiple processes while running.  
+To prevent consuming all CPU, you can specify OMP_NUM_THREADS=2 to limit the number of threads.  
 `OMP_NUM_THREADS=2 python main.py`
+
+The `--model_path` argument must be provided. This path is either an mlflow runs path or a relative path to local file
+
+1. mlflow path example: 'runs:/000fc0c95642447899b50e9104b7f6a0/model_e44'
+2. local path example: 'artifacts/000fc0c95642447899b50e9104b7f6a0/model_e44'
+
+Loading a model from mlflow will cache the model in artifacts directory.
 
 ## Todo
 - [ ] Capture metrics for model performance during training  
 - [x] incorporate MLFlow for tracking progress
-- [ ] parameterize the model variant via CLI (and other runtime args)
+- [x] parameterize the model variant via CLI (and other runtime args)
 - [x] Include bounding box collisions in the input data  
 - [x] separate paddle control and scoring from ball engine
 - [x] enable user control of paddles

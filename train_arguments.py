@@ -25,6 +25,7 @@ class TrainArguments(ModelConfiguration):
 
     train_data_set_steps: int = 3200000
     validate_dataset_steps: int = 10000
+    num_workers: int = None
     # keep this parameter last
     command: str = ""
 
@@ -46,7 +47,8 @@ class TrainArguments(ModelConfiguration):
         parser.add_argument("--hidden_size", type=int, default=128, help="The hidden size of the model")
         parser.add_argument("--num_layers", type=int, default=2, help="The number of layers of the model")
         parser.add_argument("--number_heads", type=int, default=16, help="The number of heads of the model (transformer model only)")
-        parser.add_argument("--input_sequence_length", type=int, default=10,help="The length of the input sequence")
+        parser.add_argument("--input_sequence_length", type=int, default=20,help="The length of the input sequence")
+        parser.add_argument("--num_workers", type=int, default=None, help="The number of workers")
 
         args = parser.parse_args()
         train_arguments = TrainArguments()

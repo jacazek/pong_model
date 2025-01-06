@@ -4,8 +4,8 @@ from .base_pong_model import BasePongModel
 
 
 class RNNModel(BasePongModel):
-    def __init__(self, model_config):
-        super(RNNModel, self).__init__(model_config)
+    def __init__(self):
+        super(RNNModel, self).__init__()
         self.lstm = nn.LSTM(self.config.hidden_size, self.config.hidden_size, self.config.num_layers, batch_first=True, dropout=0.2)
 
     def _forward(self, x):

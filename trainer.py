@@ -38,7 +38,7 @@ def train(train_arguments: TrainArguments):
     batch_size = train_arguments.batch_size
     train_data_set_steps = train_arguments.train_data_set_steps
     validate_dataset_steps = train_arguments.validate_dataset_steps
-    num_workers = int(os.cpu_count() / 16)
+    num_workers = train_arguments.num_workers if train_arguments.num_workers is not None else int(os.cpu_count() / 16)
     learning_rate = train_arguments.learning_rate
     gamma = train_arguments.gamma
     epochs = train_arguments.epochs
@@ -49,7 +49,7 @@ def train(train_arguments: TrainArguments):
     validate_dataset = PongDataset(validate_dataset_steps)
     validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
-    model = train_arguments.model(train_arguments).to(device=train_arguments.device)
+    model = train_arguments.model().to(device=train_arguments.device)
     regression_loss_fn = nn.MSELoss()
     classification_loss_fn = nn.BCEWithLogitsLoss()
 
@@ -163,20 +163,23 @@ def train(train_arguments: TrainArguments):
             scheduler.step()
 
             if (epoch + 1) % 5 == 0:
+                # checkpoint the model
                 save_mlflow_model(model, f"model_e{epoch}")
 
-    save_pytorch_model(model, f"{train_arguments.model_type}_weights.pth")
+    # save final model
+    save_mlflow_model(model, f"model")
+    # save_pytorch_model(model, f"{train_arguments.model_type}_weights.pth")
 
-    x = np.arange(epochs) + 1
-    fix, ((ax1, ax2)) = plt.subplots(1, 2)
-    ax1.plot(x, train_loss, label="train loss")
-    ax1.plot(x, validation_loss, label="validation loss")
-    ax1.legend(loc="upper right")
-    ax2.plot(x, train_mse, label="train mse")
-    ax2.plot(x, validation_mse, label="validation mse")
-    ax2.legend(loc="upper right")
-    plt.savefig(f"{train_arguments.model_type}.train_results.png")
-    plt.show()
+    # x = np.arange(epochs) + 1
+    # fix, ((ax1, ax2)) = plt.subplots(1, 2)
+    # ax1.plot(x, train_loss, label="train loss")
+    # ax1.plot(x, validation_loss, label="validation loss")
+    # ax1.legend(loc="upper right")
+    # ax2.plot(x, train_mse, label="train mse")
+    # ax2.plot(x, validation_mse, label="validation mse")
+    # ax2.legend(loc="upper right")
+    # plt.savefig(f"{train_arguments.model_type}.train_results.png")
+    # plt.show()
 
 def configure_main(binder: inject.Binder):
     train_arguments = TrainArguments.get_arguments()
