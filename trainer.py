@@ -11,47 +11,45 @@ import os
 import matplotlib.pyplot as plt
 import mlflow
 from model_loaders import save_mlflow_model, save_pytorch_model
+from train_arguments import TrainArguments
 import inject
 
 from models import PongDataset, ModelConfiguration
-from runtime_configuration import Model, model_path
 from game.field import Field
 from game.paddle import RandomPaddleFactory, PaddleFactory
 from game.configuration import EngineConfig
 from game.state import State
 from game.ball import Ball
 
-config = ModelConfiguration()
-
-mlflow_server_url = "http://localhost:8080"
-try:
-    response = requests.get(mlflow_server_url)
-    if response.status_code == 200:
-        mlflow.set_tracking_uri(mlflow_server_url)
-        print(f"MLflow Tracking URL set to: {mlflow_server_url}")
-    else:
-        print(f"MLflow server at {mlflow_server_url} is not available. Status code: {response.status_code}")
+@inject.params(train_arguments=TrainArguments)
+def train(train_arguments: TrainArguments):
+    try:
+        response = requests.get(train_arguments.mlflow_server_url)
+        if response.status_code == 200:
+            mlflow.set_tracking_uri(train_arguments.mlflow_server_url)
+            print(f"MLflow Tracking URL set to: {train_arguments.mlflow_server_url}")
+        else:
+            print(f"MLflow server at {train_arguments.mlflow_server_url} is not available. Status code: {response.status_code}")
+            print("Logging locally. To view results, run `python -m mlflow server --port 5000`")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to connect to MLflow server at {train_arguments.mlflow_server_url}. Error: {e}")
         print("Logging locally. To view results, run `python -m mlflow server --port 5000`")
-except requests.exceptions.RequestException as e:
-    print(f"Failed to connect to MLflow server at {mlflow_server_url}. Error: {e}")
-    print("Logging locally. To view results, run `python -m mlflow server --port 5000`")
 
-batch_size = 1000
-train_data_set_steps = 3200000
-validate_dataset_steps = 10000
-num_workers = int(os.cpu_count() / 8)
-learning_rate = 0.001
-gamma = 0.95
-epochs = 5
+    batch_size = train_arguments.batch_size
+    train_data_set_steps = train_arguments.train_data_set_steps
+    validate_dataset_steps = train_arguments.validate_dataset_steps
+    num_workers = int(os.cpu_count() / 16)
+    learning_rate = train_arguments.learning_rate
+    gamma = train_arguments.gamma
+    epochs = train_arguments.epochs
 
-def train():
     train_dataset = PongDataset(train_data_set_steps)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                                  pin_memory=True)
+                                  pin_memory=True, prefetch_factor=4)
     validate_dataset = PongDataset(validate_dataset_steps)
-    validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False)
+    validate_dataloader = DataLoader(validate_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
-    model = Model().to(device=config.device)
+    model = train_arguments.model(train_arguments).to(device=train_arguments.device)
     regression_loss_fn = nn.MSELoss()
     classification_loss_fn = nn.BCEWithLogitsLoss()
 
@@ -71,24 +69,19 @@ def train():
     validation_mse = []
     experiment = mlflow.set_experiment("Pong model")
     with mlflow.start_run(experiment_id=experiment.experiment_id):
-        mlflow.log_params(config.__dict__ | {
+        mlflow.log_params(train_arguments.__dict__ | {
             # training hyper parameters
             "optimizer": type(optimizer).__name__,
             "optimizer_detailed": str(optimizer),
             "lr_scheduler": type(lr_scheduler).__name__,
             "loss_function": f"{type(regression_loss_fn).__name__} + {type(classification_loss_fn).__name__}",
-            "batch_size": batch_size,
-            "train_data_set_steps": train_data_set_steps,
-            "validate_data_set_steps": validate_dataset_steps,
             "num_workers": num_workers,
             "learning_rate": learning_rate,
-            "gamma": gamma,
-            "epochs": epochs,
             # "window_size": train_arguments.window_size,
         })
 
         mlflow.set_tags({
-                            "model": model.__class__.__name__
+                            "model": train_arguments.model_type
                         })
         for epoch in range(epochs):
             total_loss = 0
@@ -101,12 +94,12 @@ def train():
                     current_idx = idx
                     batch_states, batch_next_states = batch
 
-                    batch_states = torch.tensor(batch_states, device=config.device, dtype=torch.float)
-                    batch_next_states = torch.tensor(batch_next_states, device=config.device, dtype=torch.float)
-                    target_continuous_states = batch_next_states[:, :config.output_size]
-                    target_discrete_states = batch_next_states[:, config.output_size:]
+                    batch_states = batch_states.to(device=train_arguments.device, dtype=torch.float)
+                    batch_next_states = batch_next_states.to(device=train_arguments.device, dtype=torch.float)
+                    target_continuous_states = batch_next_states[:, :train_arguments.output_size]
+                    target_discrete_states = batch_next_states[:, train_arguments.output_size:]
                     # Forward pass
-                    with torch.autocast(device_type=config.device, dtype=torch.float16):
+                    with torch.autocast(device_type=train_arguments.device, dtype=torch.float16):
                         continuous_states, discrete_states = model(batch_states)
                         classification_loss = classification_loss_fn(discrete_states, target_discrete_states)
                         regression_loss = regression_loss_fn(continuous_states, target_continuous_states)
@@ -143,10 +136,10 @@ def train():
                 model.eval()
                 for idx, batch in enumerate(loader):
                     batch_states, batch_next_states = batch
-                    batch_states = torch.tensor(batch_states, device=config.device, dtype=torch.float)
-                    batch_next_states = torch.tensor(batch_next_states, device=config.device, dtype=torch.float)
-                    target_continuous_states = batch_next_states[:, :config.output_size]
-                    target_discrete_states = batch_next_states[:, config.output_size:]
+                    batch_states = batch_states.to(device=train_arguments.device, dtype=torch.float)
+                    batch_next_states = batch_next_states.to(device=train_arguments.device, dtype=torch.float)
+                    target_continuous_states = batch_next_states[:, :train_arguments.output_size]
+                    target_discrete_states = batch_next_states[:, train_arguments.output_size:]
                     # Forward pass
                     continuous_states, discrete_states = model(batch_states)
                     classification_loss = classification_loss_fn(discrete_states, target_discrete_states)
@@ -172,7 +165,7 @@ def train():
             if (epoch + 1) % 5 == 0:
                 save_mlflow_model(model, f"model_e{epoch}")
 
-    save_pytorch_model(model, model_path)
+    save_pytorch_model(model, f"{train_arguments.model_type}_weights.pth")
 
     x = np.arange(epochs) + 1
     fix, ((ax1, ax2)) = plt.subplots(1, 2)
@@ -182,12 +175,15 @@ def train():
     ax2.plot(x, train_mse, label="train mse")
     ax2.plot(x, validation_mse, label="validation mse")
     ax2.legend(loc="upper right")
-    plt.savefig(f"{os.path.basename(model_path)}.train_results.png")
+    plt.savefig(f"{train_arguments.model_type}.train_results.png")
     plt.show()
 
 def configure_main(binder: inject.Binder):
+    train_arguments = TrainArguments.get_arguments()
+    binder.bind(TrainArguments, train_arguments)
+    binder.bind(ModelConfiguration, train_arguments)
     binder.bind(Field, Field(1.0, 1.0))
-    binder.bind(EngineConfig, EngineConfig())
+    binder.bind(EngineConfig, EngineConfig(max_ball_velocity=.035))
     binder.bind(PaddleFactory, RandomPaddleFactory(max_velocity=0.009))
 
     # defer constructions for objects with more complex dependencies

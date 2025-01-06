@@ -2,14 +2,15 @@ from abc import ABC, abstractmethod
 
 import torch
 from torch import nn as nn
-from . import ModelConfiguration
+import inject
+from models import ModelConfiguration
 
-config = ModelConfiguration()
 
 
 class BasePongModel(nn.Module, ABC):
-    def __init__(self):
+    def __init__(self, config: ModelConfiguration):
         super(BasePongModel, self).__init__()
+        self.config = config
         # Linear layer to expand input from 10 to 64 dimensions
         self.fc_feature_expansion = nn.Linear(config.input_size, config.hidden_size)
 

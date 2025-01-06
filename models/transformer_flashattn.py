@@ -5,9 +5,7 @@ import math
 from flash_attn.modules.mha import MHA
 from flash_attn import flash_attn_func
 from .base_pong_model import BasePongModel
-from . import ModelConfiguration
 
-config = ModelConfiguration()
 
 
 class Transformer(nn.Module):
@@ -47,7 +45,7 @@ class Transformer(nn.Module):
 class TransformerLayer(nn.Module):
     def __init__(self, embed_dim, num_heads, ff_dim, dropout=0.1):
         super(TransformerLayer, self).__init__()
-        self.mha = MHA(embed_dim, num_heads, causal=True, use_flash_attn=True, return_residual=False)
+        self.mha = MHA(embed_dim, num_heads, causal=True, use_flash_attn=False, return_residual=False)
         # self.mha = MultiHeadAttention(embed_dim, num_heads)
         self.ffn = FeedForwardNetwork(embed_dim, ff_dim, dropout)
         self.norm1 = nn.LayerNorm(embed_dim)
@@ -112,7 +110,7 @@ class FlashAttentionTransformer(BasePongModel):
         x = self.transformer(x)
         return x.mean(dim=1)
 
-    def __init__(self):
-        super(FlashAttentionTransformer, self).__init__()
-        self.transformer = Transformer(config.hidden_size, config.number_heads, config.num_layers, config.hidden_size, config.input_sequence_length, 0.2)
+    def __init__(self, model_config):
+        super(FlashAttentionTransformer, self).__init__(model_config)
+        self.transformer = Transformer(self.config.hidden_size, self.config.number_heads, self.config.num_layers, self.config.hidden_size, self.config.input_sequence_length, 0.2)
 

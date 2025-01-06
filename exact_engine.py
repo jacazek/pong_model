@@ -27,7 +27,7 @@ def generate_pong_states(num_steps=None):
 @inject.params(game_state=State)
 def _generate_pong_states(game_state: State = None):
     dt = 1  # Time step
-    ball_random_velocity = random_velocity_generator()
+    ball_random_velocity = random_velocity_generator(min=game_state.engineConfig.min_ball_velocity, max=game_state.engineConfig.max_ball_velocity)
 
     left_paddle = game_state.left_paddle
     right_paddle = game_state.right_paddle

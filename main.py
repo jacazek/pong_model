@@ -11,6 +11,8 @@ from game.ball import Ball
 from fuzzy_engine import generate_fuzzy_states
 import pygame
 import inject
+from models import ModelConfiguration
+from main_arguments import MainArguments
 
 # Initialize Pygame
 pygame.init()
@@ -100,12 +102,11 @@ def render_state(state, count, engine_config: EngineConfig = None, field: Field 
 
 # Main loop to render the state
 
-@inject.params(generator="generator")
-def main(generator):
+@inject.params(main_arguments=MainArguments)
+def main(main_arguments: MainArguments):
     global screen, screen_width, screen_height
     running = True
-    # for index, state in enumerate(generate_fuzzy_states()):
-    for index, state in enumerate(generator()):
+    for index, state in enumerate(main_arguments.generator()):
         if not running:
             break
         for event in pygame.event.get():
@@ -131,6 +132,9 @@ def main(generator):
     pygame.quit()
 
 def configure_main(binder: inject.Binder):
+    main_arguments = MainArguments.get_arguments()
+    binder.bind(MainArguments, main_arguments)
+    binder.bind(ModelConfiguration, main_arguments)
     # immediatly construct and bind an instance to the given key
     binder.bind(Field, Field(1.0, 1.0))
     binder.bind(EngineConfig, EngineConfig())
@@ -146,10 +150,6 @@ def configure_main(binder: inject.Binder):
     binder.bind_to_constructor(Ball, Ball)
     binder.bind_to_constructor(State, State)
 
-
-    # Choose the kind of generator desired
-    # binder.bind("generator", generate_pong_states)
-    binder.bind("generator", generate_fuzzy_states)
 
 if __name__ == "__main__":
     inject.configure(configure_main)
