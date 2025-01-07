@@ -166,8 +166,8 @@ def train(train_arguments: TrainArguments):
                 # checkpoint the model
                 save_mlflow_model(model, f"model_e{epoch}")
 
-    # save final model
-    save_mlflow_model(model, f"model")
+        # save final model
+        save_mlflow_model(model, f"model")
     # save_pytorch_model(model, f"{train_arguments.model_type}_weights.pth")
 
     # x = np.arange(epochs) + 1
