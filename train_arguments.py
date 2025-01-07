@@ -49,6 +49,7 @@ class TrainArguments(ModelConfiguration):
         parser.add_argument("--number_heads", type=int, default=16, help="The number of heads of the model (transformer model only)")
         parser.add_argument("--input_sequence_length", type=int, default=20,help="The length of the input sequence")
         parser.add_argument("--num_workers", type=int, default=None, help="The number of workers")
+        parser.add_argument("--device", type=str, default="cuda", help="The device to use", choices=["cpu", "cuda"])
 
         args = parser.parse_args()
         train_arguments = TrainArguments()

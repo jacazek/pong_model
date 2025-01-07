@@ -72,6 +72,7 @@ Loading a model from mlflow will cache the model in artifacts directory.
 - [x] separate paddle control and scoring from ball engine
 - [x] enable user control of paddles
 - [x] introduce variability in generator to paddle movements  
+- [ ] consider resetting ALL states to zero when ball resets so states prior to scoring don't affect ball behavior
 - [ ] limit ball vector to certain degrees  
 - [ ] provide extreme negative feedback the further ball goes out of bounds during training  
 - [ ] provide extreme negative feedback for ball moving slowly or not at all  
