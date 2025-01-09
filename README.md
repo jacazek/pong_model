@@ -64,6 +64,8 @@ The `--model_path` argument must be provided. This path is either an mlflow runs
 
 Loading a model from mlflow will cache the model in artifacts directory.
 
+`rocm-python main.py --device cpu --model_path "artifacts/48f737882a6b47c18981801e6f85b3f0/model_e59"`
+
 ## Todo
 - [ ] Capture metrics for model performance during training  
 - [x] incorporate MLFlow for tracking progress
