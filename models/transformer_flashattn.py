@@ -9,9 +9,10 @@ from .base_pong_model import BasePongModel
 
 
 class Transformer(nn.Module):
-    def __init__(self, embed_dim, num_heads, num_layers, ff_dim, max_seq_len, dropout=0.1):
+    def __init__(self, embed_dim, num_heads, num_layers, ff_dim, max_seq_len, dropout=0.3):
         super(Transformer, self).__init__()
         self.positional_encoding = self._generate_positional_encoding(max_seq_len, embed_dim)
+        # self.summary_token = nn.Parameter(torch.randn((1, 1, self.config.hidden_size)))
         self.layers = nn.ModuleList([
             TransformerLayer(embed_dim, num_heads, ff_dim, dropout)
             for _ in range(num_layers)
@@ -43,7 +44,7 @@ class Transformer(nn.Module):
 
 
 class TransformerLayer(nn.Module):
-    def __init__(self, embed_dim, num_heads, ff_dim, dropout=0.1):
+    def __init__(self, embed_dim, num_heads, ff_dim, dropout=0.3):
         super(TransformerLayer, self).__init__()
         self.mha = MHA(embed_dim, num_heads, causal=True, use_flash_attn=False, return_residual=False)
         # self.mha = MultiHeadAttention(embed_dim, num_heads)
@@ -95,7 +96,7 @@ class MultiHeadAttention(nn.Module):
         return self.fc_out(attn_output)
 
 class FeedForwardNetwork(nn.Module):
-    def __init__(self, embed_dim, ff_dim, dropout=0.1):
+    def __init__(self, embed_dim, ff_dim, dropout=0.3):
         super(FeedForwardNetwork, self).__init__()
         self.fc1 = nn.Linear(embed_dim, ff_dim)
         self.fc2 = nn.Linear(ff_dim, embed_dim)
@@ -112,5 +113,5 @@ class FlashAttentionTransformer(BasePongModel):
 
     def __init__(self):
         super(FlashAttentionTransformer, self).__init__()
-        self.transformer = Transformer(self.config.hidden_size, self.config.number_heads, self.config.num_layers, self.config.hidden_size, self.config.input_sequence_length, 0.2)
+        self.transformer = Transformer(self.config.hidden_size, self.config.number_heads, self.config.num_layers, self.config.hidden_size, self.config.input_sequence_length, 0.4)
 

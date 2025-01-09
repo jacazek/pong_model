@@ -12,6 +12,7 @@ class BasePongModel(nn.Module, ABC):
     def __init__(self, config: ModelConfiguration):
         super(BasePongModel, self).__init__()
         self.config = config
+        dropout_p = 0.4
         # Linear layer to expand input from 10 to 64 dimensions
         self.fc_feature_expansion = nn.Linear(config.input_size, config.hidden_size)
 
@@ -22,10 +23,12 @@ class BasePongModel(nn.Module, ABC):
 
         self.regression_head = nn.Sequential(
             nn.Tanh(),
+            nn.Dropout(dropout_p),
             nn.Linear(config.hidden_size, config.output_size)
         )
         self.classification_head = nn.Sequential(
             nn.Tanh(),
+            nn.Dropout(dropout_p),
             nn.Linear(config.hidden_size, config.discrete_output_size),
         )
 

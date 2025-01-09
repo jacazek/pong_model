@@ -23,7 +23,7 @@ class TrainArguments(ModelConfiguration):
     model_type: str = RNNModel.__name__
     model = None
 
-    train_data_set_steps: int = 5000000
+    train_data_set_steps: int = 3145728
     validate_dataset_steps: int = 10000
     num_workers: int = None
     # keep this parameter last
